@@ -1,0 +1,33 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: fivemarket
+      POSTGRES_PASSWORD: fivemarket
+      POSTGRES_DB: fivemarket
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U fivemarket"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .                   # <- repo root
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgres://fivemarket:fivemarket@db:5432/fivemarket
+      CORS_ORIGIN: http://localhost:5173
+      JWT_SECRET: devsecret
+      PORT: 3000
+    depends_on:
+      db:
+        condition: service_healthy
+    ports: ["3000:3000"]
+
+volumes:
+  pgdata:
