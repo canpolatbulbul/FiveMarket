@@ -1,12 +1,14 @@
-// db/scripts/migrate.cjs
-const fs = require("fs");
-const path = require("path");
-const { Client } = require("pg");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import pg from "pg";
+import "dotenv/config";
 
-const DATABASE_URL =
-  process.env.DATABASE_URL ||
-  "postgres://fivemarket:fivemarket@localhost:5432/fivemarket";
-const MIGRATIONS_DIR = path.join(__dirname, "..", "migrations");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const MIG_DIR = path.resolve(__dirname, "..", "migrations");
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
 async function ensureTable(client) {
   await client.query(`
@@ -19,7 +21,7 @@ async function ensureTable(client) {
 }
 
 async function runMigration(client, file) {
-  const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), "utf8");
+  const sql = fs.readFileSync(path.join(MIG_DIR, file), "utf8");
   await client.query("BEGIN");
   try {
     await client.query(sql);
@@ -28,37 +30,36 @@ async function runMigration(client, file) {
       [file]
     );
     await client.query("COMMIT");
-    console.log("✅ migrated:", file);
+    console.log("migrated:", file);
   } catch (e) {
     await client.query("ROLLBACK");
-    console.error("❌ failed:", file, e.message);
+    console.error("failed:", file, e.message);
     throw e;
   }
 }
 
 async function main() {
-  if (!fs.existsSync(MIGRATIONS_DIR)) {
+  if (!fs.existsSync(MIG_DIR)) {
     console.log("No migrations directory found, skipping.");
     return;
   }
-  const client = new Client({ connectionString: DATABASE_URL });
-  await client.connect();
+  const client = await pool.connect();
   try {
     await ensureTable(client);
     const { rows } = await client.query("SELECT name FROM schema_migrations");
     const applied = new Set(rows.map((r) => r.name));
-
     const files = fs
-      .readdirSync(MIGRATIONS_DIR)
+      .readdirSync(MIG_DIR)
       .filter((f) => f.endsWith(".sql"))
-      .sort((a, b) => a.localeCompare(b));
+      .sort();
 
     for (const f of files) {
       if (!applied.has(f)) await runMigration(client, f);
-      else console.log("↷ already applied:", f);
+      else console.log("already applied:", f);
     }
   } finally {
-    await client.end();
+    client.release();
+    await pool.end();
   }
 }
 

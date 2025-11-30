@@ -7,8 +7,7 @@ services:
       POSTGRES_PASSWORD: fivemarket
       POSTGRES_DB: fivemarket
     ports: ["5432:5432"]
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+    volumes: [ "pgdata:/var/lib/postgresql/data" ]
     healthcheck:
       test: ["CMD-SHELL","pg_isready -U fivemarket"]
       interval: 5s
@@ -17,7 +16,7 @@ services:
 
   api:
     build:
-      context: .                   # <- repo root
+      context: .
       dockerfile: apps/api/Dockerfile
     environment:
       DATABASE_URL: postgres://fivemarket:fivemarket@db:5432/fivemarket

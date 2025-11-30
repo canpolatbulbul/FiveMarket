@@ -1,19 +1,13 @@
 {
   "name": "fivemarket",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npm-run-all -p dev:web dev:api",
     "dev:web": "npm --workspace apps/web run dev",
     "dev:api": "npm --workspace apps/api run dev",
     "migrate": "node db/scripts/migrate.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "private": "true",
   "workspaces": [
     "apps/web",
