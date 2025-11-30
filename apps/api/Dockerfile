@@ -13,4 +13,4 @@ COPY apps/api ./apps/api
 # 5) run migrations then start api
 WORKDIR /app/apps/api
 EXPOSE 3000
-CMD ["sh","-c","node /app/db/scripts/migrate.js && npm run start"]
+CMD ["sh","-c","node /app/db/scripts/migrate.cjs && npm run start"]
