@@ -19,6 +19,9 @@ node_modules/
 # IMPORTANT: Do NOT ignore example files (keep these!)
 !.env.example
 
+BOILERPLATE_UPDATES.md
+MIGRATION_GUIDE.md
+
 # ---------------------------------
 # Production / Build Artifacts
 # ---------------------------------
