@@ -10,16 +10,26 @@ export default function useLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const api = new APICore();
 
-  const login = async ({ email, password }) => {
+  const login = async ({ email, password, rememberMe }) => {
     setIsLoading(true);
     setError(null);
 
     try {
       const path = "/api/auth/login";
-      const response = await api.post(`${path}`, { email, password });
+      const response = await api.post(`${path}`, {
+        email,
+        password,
+        rememberMe,
+      });
+
       setUser(response.data.user);
       api.storeToken(response.data.token);
       setAuthorization(response.data.token);
+
+      // Store refresh token if rememberMe is enabled
+      if (rememberMe && response.data.refreshToken) {
+        localStorage.setItem("refreshToken", response.data.refreshToken);
+      }
 
       // Navigate to home after successful login
       navigate("/home");

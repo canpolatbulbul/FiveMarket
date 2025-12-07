@@ -9,7 +9,7 @@ import { encodeUserID } from "../utils/hashids.js";
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1hr";
 
 /**
  * Register a new user
@@ -129,7 +129,7 @@ export const getCurrentUser = async (req, res) => {
 
 /**
  * Login user
- * Validates credentials and returns JWT token
+ * Validates credentials and returns JWT token (and optionally refresh token)
  */
 export const login = async (req, res) => {
   const validationErrors = validationResult(req);
@@ -141,11 +141,14 @@ export const login = async (req, res) => {
     });
   }
 
-  const { email, password } = req.body;
+  const { email, password, rememberMe } = req.body;
 
   try {
-    // Import query function for database access
+    // Import query function and refresh token utilities
     const { query } = await import("../db/index.js");
+    const { generateRefreshToken, hashRefreshToken } = await import(
+      "../utils/refresh-token.js"
+    );
 
     // Find user by email and get their roles
     const userQuery = `
@@ -194,13 +197,12 @@ export const login = async (req, res) => {
       ...user.roles.map((role) => clearanceLevels[role] || 0)
     );
 
-    // Generate JWT token (store numeric ID internally)
+    // Generate JWT access token (1 hour, store numeric ID internally)
     const token = jwt.sign({ userID: user.userID }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
     });
 
-    // Return user data with token (encode userID for external use)
-    res.status(200).json({
+    const response = {
       message: "Login successful",
       user: {
         userID: encodeUserID(user.userID), // Encoded hashid
@@ -211,7 +213,32 @@ export const login = async (req, res) => {
         clearance: userClearance,
       },
       token,
-    });
+    };
+
+    // If rememberMe is true, generate and store refresh token
+    if (rememberMe) {
+      const refreshToken = generateRefreshToken();
+      const hashedToken = hashRefreshToken(refreshToken);
+
+      // Refresh token expires in 30 days
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+      // Get user agent and IP for security tracking
+      const userAgent = req.headers["user-agent"] || null;
+      const ipAddress = req.ip || req.connection.remoteAddress || null;
+
+      // Store hashed refresh token in database
+      await query(
+        `INSERT INTO refresh_token ("userID", token, expires_at, user_agent, ip_address) 
+         VALUES ($1, $2, $3, $4, $5)`,
+        [user.userID, hashedToken, expiresAt, userAgent, ipAddress]
+      );
+
+      // Return refresh token to client (plain, not hashed)
+      response.refreshToken = refreshToken;
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({
@@ -381,6 +408,110 @@ export const resetPassword = async (req, res) => {
     return res.status(500).json({
       error: "Failed to reset password",
       message: "An error occurred while resetting your password",
+    });
+  }
+};
+
+/**
+ * Refresh access token using refresh token
+ * Validates refresh token and issues new access token
+ */
+export const refreshToken = async (req, res) => {
+  const validationErrors = validationResult(req);
+
+  if (!validationErrors.isEmpty()) {
+    return res.status(400).json({
+      error: "Validation failed",
+      errors: validationErrors.array(),
+    });
+  }
+
+  const { refreshToken } = req.body;
+
+  try {
+    const { query } = await import("../db/index.js");
+    const { hashRefreshToken } = await import("../utils/refresh-token.js");
+
+    // Hash the refresh token to compare with stored hash
+    const hashedToken = hashRefreshToken(refreshToken);
+
+    // Find valid refresh token with user data
+    const tokenResult = await query(
+      `SELECT 
+        rt."userID",
+        rt.expires_at,
+        u.first_name,
+        u.last_name,
+        u.email,
+        CASE 
+          WHEN EXISTS (SELECT 1 FROM client WHERE "userID" = u."userID") 
+            AND EXISTS (SELECT 1 FROM freelancer WHERE "userID" = u."userID")
+          THEN ARRAY['client', 'freelancer']
+          WHEN EXISTS (SELECT 1 FROM freelancer WHERE "userID" = u."userID")
+          THEN ARRAY['freelancer', 'client']
+          ELSE ARRAY['client']
+        END as roles
+       FROM refresh_token rt
+       JOIN "user" u ON rt."userID" = u."userID"
+       WHERE rt.token = $1`,
+      [hashedToken]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      return res.status(401).json({
+        error: "Invalid token",
+        message: "Refresh token is invalid",
+      });
+    }
+
+    const tokenData = tokenResult.rows[0];
+
+    // Check if token is expired
+    if (new Date() > new Date(tokenData.expires_at)) {
+      // Delete expired token
+      await query("DELETE FROM refresh_token WHERE token = $1", [hashedToken]);
+
+      return res.status(401).json({
+        error: "Token expired",
+        message: "Refresh token has expired",
+      });
+    }
+
+    // Calculate clearance level
+    const clearanceLevels = { client: 1, freelancer: 2, admin: 3 };
+    const userClearance = Math.max(
+      ...tokenData.roles.map((role) => clearanceLevels[role] || 0)
+    );
+
+    // Generate new access token
+    const newAccessToken = jwt.sign({ userID: tokenData.userID }, JWT_SECRET, {
+      expiresIn: JWT_EXPIRES_IN,
+    });
+
+    // Update last_used_at timestamp
+    await query(
+      "UPDATE refresh_token SET last_used_at = now() WHERE token = $1",
+      [hashedToken]
+    );
+
+    // Return new access token and user data
+    res.status(200).json({
+      message: "Token refreshed successfully",
+      user: {
+        userID: encodeUserID(tokenData.userID),
+        first_name: tokenData.first_name,
+        last_name: tokenData.last_name,
+        email: tokenData.email,
+        roles: tokenData.roles,
+        clearance: userClearance,
+      },
+      token: newAccessToken,
+    });
+  } catch (error) {
+    console.error("Refresh token error:", error);
+    return res.status(500).json({
+      error: "Failed to refresh token",
+      message: "An error occurred while refreshing your token",
     });
   }
 };

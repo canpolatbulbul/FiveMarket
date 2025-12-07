@@ -7,6 +7,7 @@ import {
   login,
   forgotPassword,
   resetPassword,
+  refreshToken,
 } from "../controllers/auth-controller.js";
 
 export const authRouter = express.Router();
@@ -36,6 +37,13 @@ authRouter.post(
     check("password").notEmpty().withMessage("Password is required"),
   ],
   login
+);
+
+// Refresh token route
+authRouter.post(
+  "/refresh",
+  [check("refreshToken").notEmpty().withMessage("Refresh token is required")],
+  refreshToken
 );
 
 // Forgot password route

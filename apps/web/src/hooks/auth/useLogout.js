@@ -20,6 +20,9 @@ export default function useLogout() {
       // Clear token from localStorage
       api.storeToken(null);
 
+      // Clear refresh token from localStorage
+      localStorage.removeItem("refreshToken");
+
       // Clear user from context
       setUser(null);
 

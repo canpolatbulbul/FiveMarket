@@ -15,10 +15,13 @@ export const AuthProvider = ({ children }) => {
         const initializeAuth = async () => {
             const api = new APICore();
             const token = localStorage.getItem("token");
+            const refreshToken = localStorage.getItem("refreshToken");
+            
             if (token) {
                 const decoded = jwtDecode(token);
                 const currentTime = Date.now() / 1000;
                 if (decoded.exp > currentTime) {
+                    // Token is still valid
                     setAuthorization(token);
                     try {
                         const response = await api.me();
@@ -27,8 +30,34 @@ export const AuthProvider = ({ children }) => {
                         console.error("Failed to fetch user:", error);
                         localStorage.removeItem("token");
                     }
+                } else if (refreshToken) {
+                    // Token expired but we have a refresh token
+                    try {
+                        const response = await api.post("/api/auth/refresh", { refreshToken });
+                        const newToken = response.data.token;
+                        api.storeToken(newToken);
+                        setAuthorization(newToken);
+                        setUser(response.data.user);
+                    } catch (error) {
+                        console.error("Failed to refresh token:", error);
+                        localStorage.removeItem("token");
+                        localStorage.removeItem("refreshToken");
+                    }
                 } else {
+                    // Token expired and no refresh token
                     localStorage.removeItem("token");
+                }
+            } else if (refreshToken) {
+                // No access token but we have a refresh token
+                try {
+                    const response = await api.post("/api/auth/refresh", { refreshToken });
+                    const newToken = response.data.token;
+                    api.storeToken(newToken);
+                    setAuthorization(newToken);
+                    setUser(response.data.user);
+                } catch (error) {
+                    console.error("Failed to refresh token:", error);
+                    localStorage.removeItem("refreshToken");
                 }
             }
             setLoading(false); // Done checking
