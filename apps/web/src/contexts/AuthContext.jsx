@@ -35,7 +35,8 @@ export const AuthProvider = ({ children }) => {
                     try {
                         const response = await api.post("/api/auth/refresh", { refreshToken });
                         const newToken = response.data.token;
-                        api.storeToken(newToken);
+                        // Use localStorage since refresh token means Remember Me was checked
+                        api.storeToken(newToken, true);
                         setAuthorization(newToken);
                         setUser(response.data.user);
                     } catch (error) {
@@ -52,7 +53,8 @@ export const AuthProvider = ({ children }) => {
                 try {
                     const response = await api.post("/api/auth/refresh", { refreshToken });
                     const newToken = response.data.token;
-                    api.storeToken(newToken);
+                    // Use localStorage since refresh token means Remember Me was checked
+                    api.storeToken(newToken, true);
                     setAuthorization(newToken);
                     setUser(response.data.user);
                 } catch (error) {

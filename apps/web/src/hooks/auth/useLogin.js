@@ -23,7 +23,8 @@ export default function useLogin() {
       });
 
       setUser(response.data.user);
-      api.storeToken(response.data.token);
+      // Store access token in localStorage if rememberMe, otherwise sessionStorage
+      api.storeToken(response.data.token, rememberMe);
       setAuthorization(response.data.token);
 
       // Store refresh token if rememberMe is enabled

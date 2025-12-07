@@ -82,6 +82,7 @@ export default function LoginPage() {
         await login({
           email: formData.email,
           password: formData.password,
+          rememberMe: formData.rememberMe,
         })
         // Success! User is now logged in and redirected
       } catch (err) {

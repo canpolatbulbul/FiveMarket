@@ -75,7 +75,10 @@ const setAuthorization = (token) => {
 };
 
 const getTokenFromStorage = () => {
-  const token = localStorage.getItem(AUTH_SESSION_KEY);
+  // Check localStorage first (for Remember Me), then sessionStorage
+  const token =
+    localStorage.getItem(AUTH_SESSION_KEY) ||
+    sessionStorage.getItem(AUTH_SESSION_KEY);
   return token ? token : null;
 };
 
@@ -165,11 +168,18 @@ class APICore {
     return axiosInstance.get(`/api/auth/me`);
   };
 
-  storeToken = (token) => {
+  storeToken = (token, useLocalStorage = false) => {
+    const storage = useLocalStorage ? localStorage : sessionStorage;
+
     if (token) {
-      localStorage.setItem(AUTH_SESSION_KEY, token);
+      storage.setItem(AUTH_SESSION_KEY, token);
+      // Also remove from the other storage to avoid conflicts
+      const otherStorage = useLocalStorage ? sessionStorage : localStorage;
+      otherStorage.removeItem(AUTH_SESSION_KEY);
     } else {
+      // Clear from both storages
       localStorage.removeItem(AUTH_SESSION_KEY);
+      sessionStorage.removeItem(AUTH_SESSION_KEY);
     }
   };
 }
