@@ -71,3 +71,39 @@ export const isFreelancer = (userRole) => {
 export const isClient = (userRole) => {
   return hasRole(userRole, Roles.CLIENT);
 };
+
+/**
+ * Check if user can act as a client
+ * All users can act as clients (everyone starts as client)
+ * @param {object} user - User object
+ * @returns {boolean} True if user has client access
+ */
+export const canActAsClient = (user) => {
+  if (!user) return false;
+  // Check if user has client role in roles array
+  if (user.roles?.includes(Roles.CLIENT)) return true;
+  // Fallback: check clearance level
+  return user.clearance >= ClearanceLevels.CLIENT;
+};
+
+/**
+ * Check if user can act as a freelancer
+ * @param {object} user - User object
+ * @returns {boolean} True if user has freelancer access
+ */
+export const canActAsFreelancer = (user) => {
+  if (!user) return false;
+  // Check if user has freelancer role in roles array
+  if (user.roles?.includes(Roles.FREELANCER)) return true;
+  // Fallback: check clearance level
+  return user.clearance >= ClearanceLevels.FREELANCER;
+};
+
+/**
+ * Check if user has both client and freelancer roles
+ * @param {object} user - User object
+ * @returns {boolean} True if user has dual roles
+ */
+export const hasDualRole = (user) => {
+  return canActAsClient(user) && canActAsFreelancer(user);
+};

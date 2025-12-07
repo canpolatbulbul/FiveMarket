@@ -19,8 +19,17 @@ node_modules/
 # IMPORTANT: Do NOT ignore example files (keep these!)
 !.env.example
 
+# ---------------------------------
+# Documentation (Generated)
+# ---------------------------------
+# Ignore generated documentation files
 BOILERPLATE_UPDATES.md
 MIGRATION_GUIDE.md
+DUAL_ROLE_SYSTEM.md
+V0_PROMPTS.md
+
+# Keep important project documentation
+!README.md
 
 # ---------------------------------
 # Production / Build Artifacts

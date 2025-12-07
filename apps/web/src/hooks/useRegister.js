@@ -9,18 +9,19 @@ export default function useRegister() {
   const [isLoading, setIsLoading] = useState(false);
   const api = new APICore();
 
-  const register = async ({ first_name, last_name, email, password, role }) => {
+  const register = async ({ first_name, last_name, email, password }) => {
     setIsLoading(true);
     setError(null);
 
     try {
       const path = "/api/auth/register";
+      // All users automatically register as clients
+      // They can upgrade to freelancer later via "Become a Freelancer"
       const response = await api.post(`${path}`, {
         first_name,
         last_name,
         email,
         password,
-        role, // "client" or "freelancer"
       });
 
       setUser(response.data.user);
