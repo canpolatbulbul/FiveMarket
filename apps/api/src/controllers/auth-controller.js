@@ -126,3 +126,97 @@ export const getCurrentUser = async (req, res) => {
     });
   }
 };
+
+/**
+ * Login user
+ * Validates credentials and returns JWT token
+ */
+export const login = async (req, res) => {
+  const validationErrors = validationResult(req);
+
+  if (!validationErrors.isEmpty()) {
+    return res.status(400).json({
+      error: "Validation failed",
+      errors: validationErrors.array(),
+    });
+  }
+
+  const { email, password } = req.body;
+
+  try {
+    // Import query function for database access
+    const { query } = await import("../db/index.js");
+
+    // Find user by email and get their roles
+    const userQuery = `
+      SELECT 
+        u."userID",
+        u.first_name,
+        u.last_name,
+        u.email,
+        u.password,
+        CASE 
+          WHEN EXISTS (SELECT 1 FROM client WHERE "userID" = u."userID") 
+            AND EXISTS (SELECT 1 FROM freelancer WHERE "userID" = u."userID")
+          THEN ARRAY['client', 'freelancer']
+          WHEN EXISTS (SELECT 1 FROM freelancer WHERE "userID" = u."userID")
+          THEN ARRAY['freelancer', 'client']
+          ELSE ARRAY['client']
+        END as roles
+      FROM "user" u
+      WHERE u.email = $1
+    `;
+
+    const result = await query(userQuery, [email]);
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        error: "Invalid credentials",
+        message: "User with this email does not exist",
+      });
+    }
+
+    const user = result.rows[0];
+
+    // Compare password with hashed password
+    const isPasswordValid = await bcryptjs.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        error: "Invalid credentials",
+        message: "Password is incorrect",
+      });
+    }
+
+    // Calculate clearance level based on roles
+    const clearanceLevels = { client: 1, freelancer: 2, admin: 3 };
+    const userClearance = Math.max(
+      ...user.roles.map((role) => clearanceLevels[role] || 0)
+    );
+
+    // Generate JWT token (store numeric ID internally)
+    const token = jwt.sign({ userID: user.userID }, JWT_SECRET, {
+      expiresIn: JWT_EXPIRES_IN,
+    });
+
+    // Return user data with token (encode userID for external use)
+    res.status(200).json({
+      message: "Login successful",
+      user: {
+        userID: encodeUserID(user.userID), // Encoded hashid
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        roles: user.roles,
+        clearance: userClearance,
+      },
+      token,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.status(500).json({
+      error: "Login failed",
+      message: "An error occurred during login",
+    });
+  }
+};

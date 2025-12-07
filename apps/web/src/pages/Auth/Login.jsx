@@ -1,12 +1,19 @@
 import { useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, Navigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Eye, EyeOff, X } from "lucide-react"
 import useLogin from "@/hooks/auth/useLogin"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function LoginPage() {
+  const { user } = useAuth()
   const { login, error: loginError, isLoading: loginLoading } = useLogin()
   const [showPassword, setShowPassword] = useState(false)
+
+  // Redirect if already logged in
+  if (user) {
+    return <Navigate to="/home" replace />
+  }
 
   const [formData, setFormData] = useState({
     email: "",

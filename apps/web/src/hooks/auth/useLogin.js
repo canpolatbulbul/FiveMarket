@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { APICore, setAuthorization } from "@/helpers/apiCore.js";
 import { useAuth } from "@/contexts/AuthContext.jsx";
 
 export default function useLogin() {
   const { user, setUser } = useAuth();
+  const navigate = useNavigate();
   const [error, setError] = useState();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -19,6 +21,9 @@ export default function useLogin() {
       setUser(response.data.user);
       api.storeToken(response.data.token);
       setAuthorization(response.data.token);
+
+      // Navigate to home after successful login
+      navigate("/home");
     } catch (error) {
       setError(error.message);
       throw error;

@@ -1,7 +1,11 @@
 import express from "express";
 import { check } from "express-validator";
 import checkAuth from "../middleware/auth-check.js";
-import { register, getCurrentUser } from "../controllers/auth-controller.js";
+import {
+  register,
+  getCurrentUser,
+  login,
+} from "../controllers/auth-controller.js";
 
 export const authRouter = express.Router();
 
@@ -22,8 +26,15 @@ authRouter.post(
   register
 );
 
-// TODO: Implement login route
-// authRouter.post("/login", login);
+// Login route with validation
+authRouter.post(
+  "/login",
+  [
+    check("email").isEmail().withMessage("Valid email is required"),
+    check("password").notEmpty().withMessage("Password is required"),
+  ],
+  login
+);
 
 // TODO: Implement forgot password route
 // authRouter.post("/forgot-password", forgotPassword);
