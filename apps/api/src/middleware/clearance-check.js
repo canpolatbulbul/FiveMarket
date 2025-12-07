@@ -59,14 +59,14 @@ const checkClearance = (requiredClearance) => {
           u.last_name,
           u.email,
           CASE 
-            WHEN EXISTS (SELECT 1 FROM "Client" WHERE "userID" = u."userID") 
-              AND EXISTS (SELECT 1 FROM "Freelancer" WHERE "userID" = u."userID")
+            WHEN EXISTS (SELECT 1 FROM client WHERE "userID" = u."userID") 
+              AND EXISTS (SELECT 1 FROM freelancer WHERE "userID" = u."userID")
             THEN ARRAY['client', 'freelancer']
-            WHEN EXISTS (SELECT 1 FROM "Freelancer" WHERE "userID" = u."userID")
+            WHEN EXISTS (SELECT 1 FROM freelancer WHERE "userID" = u."userID")
             THEN ARRAY['freelancer', 'client']
             ELSE ARRAY['client']
           END as roles
-        FROM "User" u
+        FROM "user" u
         WHERE u."userID" = $1
       `;
 

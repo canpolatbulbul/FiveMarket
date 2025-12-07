@@ -32,7 +32,7 @@ export const register = async (req, res) => {
     const result = await tx(async (client) => {
       // Check if user already exists
       const existingUser = await client.query(
-        'SELECT "userID" FROM "User" WHERE email = $1',
+        'SELECT "userID" FROM "user" WHERE email = $1',
         [email]
       );
 
@@ -46,7 +46,7 @@ export const register = async (req, res) => {
 
       // Insert user
       const userResult = await client.query(
-        `INSERT INTO "User" (first_name, last_name, email, password)
+        `INSERT INTO "user" (first_name, last_name, email, password)
          VALUES ($1, $2, $3, $4)
          RETURNING "userID", first_name, last_name, email`,
         [first_name, last_name, email, hashedPassword]
@@ -56,7 +56,7 @@ export const register = async (req, res) => {
 
       // Automatically create client entry (all users start as clients)
       await client.query(
-        `INSERT INTO "Client" ("userID")
+        `INSERT INTO client ("userID")
          VALUES ($1)`,
         [user.userID]
       );
