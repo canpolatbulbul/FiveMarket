@@ -20,6 +20,18 @@ node_modules/
 !.env.example
 
 # ---------------------------------
+# Documentation (Generated)
+# ---------------------------------
+# Ignore generated documentation files
+BOILERPLATE_UPDATES.md
+MIGRATION_GUIDE.md
+DUAL_ROLE_SYSTEM.md
+V0_PROMPTS.md
+
+# Keep important project documentation
+!README.md
+
+# ---------------------------------
 # Production / Build Artifacts
 # ---------------------------------
 # Vite/Web build output
