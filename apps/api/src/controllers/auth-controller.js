@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import crypto from "node:crypto";
 import { tx } from "../db/tx.js";
+import { encodeUserID } from "../utils/hashids.js";
 
 dotenv.config();
 
@@ -64,16 +65,16 @@ export const register = async (req, res) => {
       return user;
     });
 
-    // Generate JWT token
+    // Generate JWT token (store numeric ID internally)
     const token = jwt.sign({ userID: result.userID }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
     });
 
-    // Return user data with token
+    // Return user data with token (encode userID for external use)
     res.status(201).json({
       message: "User registered successfully",
       user: {
-        userID: result.userID,
+        userID: encodeUserID(result.userID), // Encoded hashid
         first_name: result.first_name,
         last_name: result.last_name,
         email: result.email,
@@ -95,6 +96,33 @@ export const register = async (req, res) => {
     return res.status(500).json({
       error: "Registration failed",
       message: "An error occurred during registration",
+    });
+  }
+};
+
+/**
+ * Get current authenticated user
+ * Returns user data from req.user (populated by auth middleware)
+ */
+export const getCurrentUser = async (req, res) => {
+  try {
+    // req.user is populated by the auth middleware
+    if (!req.user) {
+      return res.status(401).json({
+        error: "Not authenticated",
+        message: "User not found in request",
+      });
+    }
+
+    // Return user data (userID is already encoded by middleware)
+    res.status(200).json({
+      user: req.user,
+    });
+  } catch (error) {
+    console.error("Get current user error:", error);
+    return res.status(500).json({
+      error: "Failed to get user",
+      message: "An error occurred while fetching user data",
     });
   }
 };

@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { query } from "../db/index.js";
+import { encodeUserID } from "../utils/hashids.js";
 
 /**
  * Middleware to check user authentication and clearance level
@@ -101,9 +102,9 @@ const checkClearance = (requiredClearance) => {
         });
       }
 
-      // Attach user data to request object
+      // Attach user data to request object (encode userID for external use)
       req.user = {
-        userID: user.userID,
+        userID: encodeUserID(user.userID), // Encoded hashid
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,

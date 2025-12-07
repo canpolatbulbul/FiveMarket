@@ -1,9 +1,12 @@
 import express from "express";
 import { check } from "express-validator";
 import checkAuth from "../middleware/auth-check.js";
-import { register } from "../controllers/auth-controller.js";
+import { register, getCurrentUser } from "../controllers/auth-controller.js";
 
 export const authRouter = express.Router();
+
+// Get current user (requires authentication)
+authRouter.get("/me", checkAuth, getCurrentUser);
 
 // Register route with validation
 authRouter.post(

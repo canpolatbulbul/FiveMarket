@@ -162,7 +162,7 @@ class APICore {
   };
 
   me = () => {
-    return axiosInstance.get(`/api/me`);
+    return axiosInstance.get(`/api/auth/me`);
   };
 
   storeToken = (token) => {

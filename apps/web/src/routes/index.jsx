@@ -1,35 +1,43 @@
-import React, {Suspense} from "react";
+import React, {lazy, Suspense} from "react";
 import {useRoutes, Navigate} from "react-router-dom";
 import {useAuth} from "@/contexts/AuthContext.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import {Roles} from "@/helpers/roles.js";
+import LoadingSpinner from "../components/LoadingSpinner.jsx";
 
-const Register = React.lazy(() => import("@/pages/Auth/Register.jsx"));
-const Login = React.lazy(() => import("@/pages/Auth/Login.jsx"));
-const ForgotPassword = React.lazy(() => import("@/pages/Auth/ForgotPassword.jsx"));
-const TermsAndConditions = React.lazy(() => import("@/pages/Legal/TermsAndConditions.jsx"));
-const PrivacyPolicy = React.lazy(() => import("@/pages/Legal/PrivacyPolicy.jsx"));
-
-const loading = () => <div>Loading...</div>;
+const HomePage = lazy(() => import("../pages/Home/HomePage.jsx"));
+const Register = lazy(() => import("../pages/Auth/Register.jsx"));
+const Login = lazy(() => import("../pages/Auth/Login.jsx"));
+const ForgotPassword = lazy(() => import("../pages/Auth/ForgotPassword.jsx"));
+const TermsAndConditions = lazy(() => import("../pages/Legal/TermsAndConditions.jsx"));
+const PrivacyPolicy = lazy(() => import("../pages/Legal/PrivacyPolicy.jsx"));
+const Logout = lazy(() => import("../pages/Auth/Logout.jsx"));
 
 const LoadComponent = ({component: Component}) => (
-    <Suspense fallback={loading()}>
+    <Suspense fallback={<LoadingSpinner fullScreen />}>
         <Component />
     </Suspense>
 );
 
 const AllRoutes = () => {
+    const { user } = useAuth();
+    
     return useRoutes([
         {
             path: "/",
-            element: <Navigate to="/auth/register" />
+            element: user ? <Navigate to="/home" /> : <Navigate to="/auth/login" />
+        },
+        {
+            path: "/home",
+            element: user ? <LoadComponent component={HomePage} /> : <Navigate to="/auth/login" />
         },
         {
             path: "/auth",
             children:[
                 {path:"register",element: <LoadComponent component={Register} />},
                 {path:"login",element: <LoadComponent component={Login} />},
-                {path:"forgot-password",element: <LoadComponent component={ForgotPassword} />}
+                {path:"forgot-password",element: <LoadComponent component={ForgotPassword} />},
+                {path:"logout",element: <LoadComponent component={Logout} />}
             ]
         },
         {
