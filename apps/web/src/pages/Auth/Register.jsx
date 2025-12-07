@@ -2,10 +2,10 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Shield, Star, Sparkles, Zap, Users, Eye, EyeOff, Check, X } from "lucide-react"
-import useRegister from "@/hooks/useRegister"
+import useRegister from "@/hooks/auth/useRegister"
 
 export default function RegisterPage() {
-  const { register, error: registerError, isLoading: registerLoading } = useRegister()
+  const { user, register: register, error: registerError, isLoading: registerLoading } = useRegister()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
@@ -76,10 +76,19 @@ export default function RegisterPage() {
       setErrors((prev) => ({ ...prev, [name]: validateField(name, fieldValue) }))
     }
 
-    if (name === "password" && touched.confirmPassword) {
+    // Special handling for password fields - validate confirmPassword when password changes
+    if (name === "password" && touched.confirmPassword && formData.confirmPassword) {
       setErrors((prev) => ({
         ...prev,
-        confirmPassword: validateField("confirmPassword", formData.confirmPassword),
+        confirmPassword: fieldValue !== formData.confirmPassword ? "Passwords do not match" : "",
+      }))
+    }
+    
+    // Only validate confirmPassword if password field has content
+    if (name === "confirmPassword" && formData.password) {
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: validateField("confirmPassword", fieldValue),
       }))
     }
   }
@@ -141,6 +150,10 @@ export default function RegisterPage() {
     }
   }
 
+  if(user){
+    return <Navigate to="/home" replace/>;
+  }
+  
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-white via-purple-50/30 to-indigo-50/50">
       {/* Form Section */}

@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { X, Check, Mail } from "lucide-react"
-import useForgotPassword from "@/hooks/useForgotPassword"
+import useForgotPassword from "@/hooks/auth/useForgotPassword"
 
 export default function ForgotPasswordPage() {
   const { forgotPassword, error: forgotPasswordError, isLoading } = useForgotPassword()

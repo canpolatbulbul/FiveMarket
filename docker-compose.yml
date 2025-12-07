@@ -27,6 +27,10 @@ services:
       db:
         condition: service_healthy
     ports: ["3000:3000"]
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+      - ./apps/api/package.json:/app/apps/api/package.json
+    command: npm run dev
 
 volumes:
   pgdata:

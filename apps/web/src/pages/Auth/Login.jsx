@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Eye, EyeOff, X } from "lucide-react"
-import useLogin from "@/hooks/useLogin"
+import useLogin from "@/hooks/auth/useLogin"
 
 export default function LoginPage() {
   const { login, error: loginError, isLoading: loginLoading } = useLogin()
