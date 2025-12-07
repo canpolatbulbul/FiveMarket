@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { APICore } from "@/helpers/apiCore.js";
+import { useNavigate } from "react-router-dom";
+import { APICore, setAuthorization } from "@/helpers/apiCore.js";
 import { useAuth } from "@/contexts/AuthContext.jsx";
-import { setAuthorization } from "@/helpers/apiCore.js";
 
 export default function useRegister() {
-  const { user, setUser } = useAuth();
+  const { setUser } = useAuth();
+  const navigate = useNavigate();
   const [error, setError] = useState();
   const [isLoading, setIsLoading] = useState(false);
   const api = new APICore();
@@ -27,6 +28,8 @@ export default function useRegister() {
       setUser(response.data.user);
       api.storeToken(response.data.token);
       setAuthorization(response.data.token);
+      // Navigate to home after successful registeration.
+      navigate("/home");
     } catch (error) {
       setError(error.message);
       throw error;
@@ -35,5 +38,5 @@ export default function useRegister() {
     }
   };
 
-  return { user, error, isLoading, register };
+  return { error, isLoading, register };
 }

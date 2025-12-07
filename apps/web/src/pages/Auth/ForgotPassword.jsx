@@ -5,10 +5,9 @@ import { X, Check, Mail } from "lucide-react"
 import useForgotPassword from "@/hooks/auth/useForgotPassword"
 
 export default function ForgotPasswordPage() {
-  const { forgotPassword, error: forgotPasswordError, isLoading } = useForgotPassword()
+  const { forgotPassword, error: forgotPasswordError, success, isLoading, reset } = useForgotPassword()
   const [email, setEmail] = useState("")
   const [touched, setTouched] = useState(false)
-  const [success, setSuccess] = useState(false)
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -24,7 +23,6 @@ export default function ForgotPasswordPage() {
     if (validateEmail(email)) {
       try {
         await forgotPassword({ email })
-        setSuccess(true)
       } catch (err) {
         // Error is handled by the hook
       }
@@ -68,29 +66,40 @@ export default function ForgotPasswordPage() {
           {success ? (
             // Success State
             <div className="space-y-4">
-              <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+              <div className="bg-green-100 border-2 border-green-300 rounded-lg p-6">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0">
                     <Check className="h-6 w-6 text-white" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-green-900 mb-1">Email sent successfully!</p>
-                    <p className="text-sm text-green-700">
-                      We've sent password reset instructions to <strong>{email}</strong>
+                    <p className="text-sm text-green-800">
+                      We've sent password reset instructions to <strong className="text-green-900">{email}</strong>
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start gap-2">
-                  <Mail className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-blue-900">
-                    <p className="font-semibold mb-1">What's next?</p>
-                    <ul className="list-disc list-inside space-y-1 text-blue-800">
-                      <li>Check your inbox (and spam folder)</li>
-                      <li>Click the reset link in the email</li>
-                      <li>Create a new password</li>
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                    <Mail className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="ml-10">
+                    <p className="text-sm font-semibold text-blue-900 mb-2">What's next?</p>
+                    <ul className="space-y-1.5 text-sm text-blue-800">
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 mt-0.5">•</span>
+                        <span>Check your inbox (and spam folder)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 mt-0.5">•</span>
+                        <span>Click the reset link in the email</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 mt-0.5">•</span>
+                        <span>Create a new password</span>
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -98,7 +107,7 @@ export default function ForgotPasswordPage() {
 
               <div className="flex gap-3">
                 <Button
-                  onClick={() => setSuccess(false)}
+                  onClick={reset}
                   className="flex-1 text-base h-10 bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold transition-all duration-300"
                 >
                   Send again

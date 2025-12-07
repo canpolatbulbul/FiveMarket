@@ -5,6 +5,8 @@ import {
   register,
   getCurrentUser,
   login,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/auth-controller.js";
 
 export const authRouter = express.Router();
@@ -36,5 +38,21 @@ authRouter.post(
   login
 );
 
-// TODO: Implement forgot password route
-// authRouter.post("/forgot-password", forgotPassword);
+// Forgot password route
+authRouter.post(
+  "/forgot-password",
+  [check("email").isEmail().withMessage("Valid email is required")],
+  forgotPassword
+);
+
+// Reset password route
+authRouter.post(
+  "/reset-password",
+  [
+    check("token").notEmpty().withMessage("Reset token is required"),
+    check("password")
+      .isLength({ min: 8 })
+      .withMessage("Password must be at least 8 characters"),
+  ],
+  resetPassword
+);

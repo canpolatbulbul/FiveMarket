@@ -3,12 +3,19 @@ import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Shield, Star, Sparkles, Zap, Users, Eye, EyeOff, Check, X } from "lucide-react"
 import useRegister from "@/hooks/auth/useRegister"
+import { useAuth } from "@/contexts/AuthContext"
+import { Navigate } from "react-router-dom"
 
 export default function RegisterPage() {
-  const { user, register: register, error: registerError, isLoading: registerLoading } = useRegister()
+  const { user } = useAuth()
+  const { register: register, error: registerError, isLoading: registerLoading } = useRegister()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
+  if(user){
+    return <Navigate to="/home" replace/>;
+  }
+  
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -150,10 +157,7 @@ export default function RegisterPage() {
     }
   }
 
-  if(user){
-    return <Navigate to="/home" replace/>;
-  }
-  
+
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-white via-purple-50/30 to-indigo-50/50">
       {/* Form Section */}

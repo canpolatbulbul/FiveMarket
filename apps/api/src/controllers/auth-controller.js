@@ -220,3 +220,167 @@ export const login = async (req, res) => {
     });
   }
 };
+
+/**
+ * Forgot Password - Send reset email
+ * Generates a reset token and sends email with reset link
+ */
+export const forgotPassword = async (req, res) => {
+  const validationErrors = validationResult(req);
+
+  if (!validationErrors.isEmpty()) {
+    return res.status(400).json({
+      error: "Validation failed",
+      errors: validationErrors.array(),
+    });
+  }
+
+  const { email } = req.body;
+
+  try {
+    const { query } = await import("../db/index.js");
+    const { sendPasswordResetEmail } = await import("../utils/email.js");
+
+    // Find user by email
+    const userResult = await query(
+      'SELECT "userID", first_name, email FROM "user" WHERE email = $1',
+      [email]
+    );
+
+    // Always return success to prevent email enumeration
+    if (userResult.rows.length === 0) {
+      return res.status(200).json({
+        message:
+          "If an account with that email exists, a password reset link has been sent.",
+      });
+    }
+
+    const user = userResult.rows[0];
+
+    // Generate reset token (cryptographically secure random string)
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    // Token expires in 1 hour
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    // Delete any existing tokens for this user
+    await query('DELETE FROM password_reset_token WHERE "userID" = $1', [
+      user.userID,
+    ]);
+
+    // Store hashed token in database
+    await query(
+      'INSERT INTO password_reset_token ("userID", token, expires_at) VALUES ($1, $2, $3)',
+      [user.userID, hashedToken, expiresAt]
+    );
+
+    // Send email with plain token (not hashed)
+    await sendPasswordResetEmail(user.email, resetToken, user.first_name);
+
+    res.status(200).json({
+      message:
+        "If an account with that email exists, a password reset link has been sent.",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    return res.status(500).json({
+      error: "Failed to process request",
+      message: "An error occurred while processing your request",
+    });
+  }
+};
+
+/**
+ * Reset Password - Update password with valid token
+ * Validates token and updates user's password
+ */
+export const resetPassword = async (req, res) => {
+  const validationErrors = validationResult(req);
+
+  if (!validationErrors.isEmpty()) {
+    return res.status(400).json({
+      error: "Validation failed",
+      errors: validationErrors.array(),
+    });
+  }
+
+  const { token, password } = req.body;
+
+  try {
+    const { query } = await import("../db/index.js");
+
+    // Hash the token to compare with stored hash
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    // Find valid token
+    const tokenResult = await query(
+      `SELECT "userID", expires_at, used 
+       FROM password_reset_token 
+       WHERE token = $1`,
+      [hashedToken]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      return res.status(400).json({
+        error: "Invalid token",
+        message: "Password reset token is invalid",
+      });
+    }
+
+    const resetToken = tokenResult.rows[0];
+
+    // Check if token is expired
+    if (new Date() > new Date(resetToken.expires_at)) {
+      return res.status(400).json({
+        error: "Token expired",
+        message: "Password reset token has expired",
+      });
+    }
+
+    // Check if token was already used
+    if (resetToken.used) {
+      return res.status(400).json({
+        error: "Token already used",
+        message: "This password reset token has already been used",
+      });
+    }
+
+    // Hash new password
+    const salt = await bcryptjs.genSalt(10);
+    const hashedPassword = await bcryptjs.hash(password, salt);
+
+    // Update password and mark token as used
+    await query("BEGIN");
+
+    try {
+      await query('UPDATE "user" SET password = $1 WHERE "userID" = $2', [
+        hashedPassword,
+        resetToken.userID,
+      ]);
+
+      await query(
+        "UPDATE password_reset_token SET used = true WHERE token = $1",
+        [hashedToken]
+      );
+
+      await query("COMMIT");
+
+      res.status(200).json({
+        message: "Password reset successful",
+      });
+    } catch (error) {
+      await query("ROLLBACK");
+      throw error;
+    }
+  } catch (error) {
+    console.error("Reset password error:", error);
+    return res.status(500).json({
+      error: "Failed to reset password",
+      message: "An error occurred while resetting your password",
+    });
+  }
+};

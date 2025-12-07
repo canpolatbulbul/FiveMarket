@@ -9,6 +9,7 @@ const HomePage = lazy(() => import("../pages/Home/HomePage.jsx"));
 const Register = lazy(() => import("../pages/Auth/Register.jsx"));
 const Login = lazy(() => import("../pages/Auth/Login.jsx"));
 const ForgotPassword = lazy(() => import("../pages/Auth/ForgotPassword.jsx"));
+const ResetPassword = lazy(() => import("../pages/Auth/ResetPassword.jsx"));
 const TermsAndConditions = lazy(() => import("../pages/Legal/TermsAndConditions.jsx"));
 const PrivacyPolicy = lazy(() => import("../pages/Legal/PrivacyPolicy.jsx"));
 const Logout = lazy(() => import("../pages/Auth/Logout.jsx"));
@@ -37,6 +38,7 @@ const AllRoutes = () => {
                 {path:"register",element: <LoadComponent component={Register} />},
                 {path:"login",element: <LoadComponent component={Login} />},
                 {path:"forgot-password",element: <LoadComponent component={ForgotPassword} />},
+                {path:"reset-password",element: <LoadComponent component={ResetPassword} />},
                 {path:"logout",element: <LoadComponent component={Logout} />}
             ]
         },

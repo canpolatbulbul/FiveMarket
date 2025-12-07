@@ -4,11 +4,10 @@ import { APICore, setAuthorization } from "@/helpers/apiCore.js";
 import { useAuth } from "@/contexts/AuthContext.jsx";
 
 export default function useLogin() {
-  const { user, setUser } = useAuth();
+  const { setUser } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState();
   const [isLoading, setIsLoading] = useState(false);
-
   const api = new APICore();
 
   const login = async ({ email, password }) => {
@@ -32,5 +31,5 @@ export default function useLogin() {
     }
   };
 
-  return { user, error, isLoading, login };
+  return { error, isLoading, login };
 }
