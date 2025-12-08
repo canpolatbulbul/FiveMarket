@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import "dotenv/config";
-import health from "./routes/health.js";
+import health from "./routers/health.js";
 import { authRouter } from "./routers/auth-router.js";
 
 const app = express();
