@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
+import CategoryNav from "@/components/CategoryNav";
+import Footer from "@/components/Footer";
 import { ArrowRight, TrendingUp, Star, Briefcase, MessageSquare, ShoppingBag } from "lucide-react";
 import { APICore } from "@/helpers/apiCore";
 
@@ -87,14 +89,15 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-purple-50 to-white">
       <Navbar />
+      <CategoryNav />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
-        <div className="mb-12">
+        <div className="mb-8">
           <h1 className="text-4xl font-bold text-slate-900 mb-2">
-            Welcome back, {user?.first_name}! 👋
+            Welcome back, {user?.first_name}!
           </h1>
           <p className="text-lg text-slate-600">
             {isFreelancer
@@ -104,7 +107,7 @@ export default function HomePage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mb-16">
+        <div className="mb-10">
           <h2 className="text-2xl font-bold text-slate-900 mb-6">Quick Actions</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {quickActions.map((action) => {
@@ -134,7 +137,7 @@ export default function HomePage() {
         </div>
 
         {/* Featured Services */}
-        <div className="mb-16">
+        <div className="mb-10">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-slate-900">
               {isFreelancer ? "Trending Services" : "Recommended for You"}
@@ -164,31 +167,41 @@ export default function HomePage() {
                 <Link
                   key={service.service_id}
                   to={`/service/${service.service_id}`}
-                  className="group bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-xl transition-all duration-300 overflow-hidden"
+                  className="group bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full"
                 >
-                  <div className="relative h-48 bg-gradient-to-br from-indigo-100 to-purple-100 overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center text-6xl">
+                  {/* Image/Thumbnail */}
+                  <div className="relative h-40 bg-gradient-to-br from-blue-100 via-cyan-50 to-indigo-100 overflow-hidden">
+                    <div className="absolute inset-0 flex items-center justify-center text-5xl group-hover:scale-110 transition-transform duration-300">
                       {service.category_emoji || "💼"}
                     </div>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-slate-900 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
-                      {service.title}
-                    </h3>
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                        <span className="text-sm font-medium text-slate-700">
-                          {service.rating || "5.0"}
-                        </span>
-                      </div>
-                      <span className="text-sm text-slate-500">
-                        ({service.reviews || "10"})
+                    {/* Rating badge */}
+                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-sm">
+                      <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+                      <span className="text-xs font-semibold text-slate-700">
+                        {service.rating || "5.0"}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        ({service.reviews || "0"})
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">Starting at</span>
-                      <span className="text-lg font-bold text-slate-900">
+                  </div>
+
+                  {/* Content - flex-1 makes this grow to fill space */}
+                  <div className="p-4 flex flex-col flex-1">
+                    {/* Freelancer name */}
+                    <p className="text-xs text-slate-500 mb-1">
+                      {service.freelancer_name}
+                    </p>
+
+                    {/* Title - fixed height with line-clamp */}
+                    <h3 className="font-semibold text-slate-900 mb-auto line-clamp-2 group-hover:text-indigo-600 transition-colors min-h-[2.75rem]">
+                      {service.title}
+                    </h3>
+
+                    {/* Price section - always at bottom */}
+                    <div className="flex items-center justify-between pt-4 mt-3 border-t border-slate-100">
+                      <span className="text-xs text-slate-500 uppercase tracking-wide">Starting at</span>
+                      <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                         ${service.min_price || "50"}
                       </span>
                     </div>
@@ -210,7 +223,7 @@ export default function HomePage() {
         </div>
 
         {/* Popular Categories */}
-        <div className="mb-16">
+        <div className="mb-10">
           <h2 className="text-2xl font-bold text-slate-900 mb-6">Popular Categories</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {categories.map((category) => (
@@ -232,6 +245,8 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }
