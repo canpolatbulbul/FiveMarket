@@ -34,7 +34,21 @@ export default function ResetPasswordPage() {
   }
 
   const validatePassword = (password) => {
-    if (password.length < 8) return "Password must be at least 8 characters"
+    if (!password || password.length < 8) {
+      return "Password must be at least 8 characters long"
+    }
+    if (!/[a-z]/.test(password)) {
+      return "Password must contain at least one lowercase letter"
+    }
+    if (!/[A-Z]/.test(password)) {
+      return "Password must contain at least one uppercase letter"
+    }
+    if (!/\d/.test(password)) {
+      return "Password must contain at least one number"
+    }
+    if (!/[^a-zA-Z0-9]/.test(password)) {
+      return "Password must contain at least one special character (!@#$%^&* etc.)"
+    }
     return ""
   }
 
@@ -71,7 +85,7 @@ export default function ResetPasswordPage() {
 
   const isFormValid = () => {
     return (
-      formData.password.length >= 8 &&
+      !validatePassword(formData.password) && // Password passes all validations
       formData.password === formData.confirmPassword
     )
   }
@@ -198,6 +212,36 @@ export default function ResetPasswordPage() {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                
+                {/* Password requirements checklist */}
+                {formData.password && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs font-semibold text-slate-600 mb-1">Password requirements:</p>
+                    <div className="space-y-0.5">
+                      <div className={`text-xs flex items-center gap-1.5 ${formData.password.length >= 8 ? "text-green-600" : "text-slate-400"}`}>
+                        <Check className={`h-3 w-3 ${formData.password.length >= 8 ? "" : "opacity-0"}`} />
+                        At least 8 characters
+                      </div>
+                      <div className={`text-xs flex items-center gap-1.5 ${/[a-z]/.test(formData.password) ? "text-green-600" : "text-slate-400"}`}>
+                        <Check className={`h-3 w-3 ${/[a-z]/.test(formData.password) ? "" : "opacity-0"}`} />
+                        One lowercase letter
+                      </div>
+                      <div className={`text-xs flex items-center gap-1.5 ${/[A-Z]/.test(formData.password) ? "text-green-600" : "text-slate-400"}`}>
+                        <Check className={`h-3 w-3 ${/[A-Z]/.test(formData.password) ? "" : "opacity-0"}`} />
+                        One uppercase letter
+                      </div>
+                      <div className={`text-xs flex items-center gap-1.5 ${/\d/.test(formData.password) ? "text-green-600" : "text-slate-400"}`}>
+                        <Check className={`h-3 w-3 ${/\d/.test(formData.password) ? "" : "opacity-0"}`} />
+                        One number
+                      </div>
+                      <div className={`text-xs flex items-center gap-1.5 ${/[^a-zA-Z0-9]/.test(formData.password) ? "text-green-600" : "text-slate-400"}`}>
+                        <Check className={`h-3 w-3 ${/[^a-zA-Z0-9]/.test(formData.password) ? "" : "opacity-0"}`} />
+                        One special character (!@#$%^&* etc.)
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 {errors.password && touched.password && (
                   <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
                     <X className="h-4 w-4" />

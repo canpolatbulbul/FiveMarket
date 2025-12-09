@@ -42,6 +42,9 @@ axiosInstance.interceptors.response.use(
         case 404:
           message = "Sorry! The data you are looking for could not be found.";
           break;
+        case 409:
+          message = data?.message || "An account with this email already exists. Please log in instead.";
+          break;
         default:
           message =
             data?.message || error.message || "An unknown error occurred.";
