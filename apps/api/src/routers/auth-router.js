@@ -2,6 +2,7 @@ import express from "express";
 import { check, body } from "express-validator";
 import checkAuth from "../middleware/auth-check.js";
 import { loginRateLimiter } from "../middleware/rate-limit.js";
+import { validate } from "../middleware/validate.js";
 import {
   register,
   getCurrentUser,
@@ -47,6 +48,7 @@ authRouter.post(
       .custom(validatePassword)
       .withMessage("Password does not meet requirements"),
   ],
+  validate,
   register
 );
 
@@ -58,6 +60,7 @@ authRouter.post(
     check("email").isEmail().withMessage("Valid email is required"),
     check("password").notEmpty().withMessage("Password is required"),
   ],
+  validate,
   login
 );
 
@@ -65,6 +68,7 @@ authRouter.post(
 authRouter.post(
   "/refresh",
   [check("refreshToken").notEmpty().withMessage("Refresh token is required")],
+  validate,
   refreshToken
 );
 
@@ -72,6 +76,7 @@ authRouter.post(
 authRouter.post(
   "/forgot-password",
   [check("email").isEmail().withMessage("Valid email is required")],
+  validate,
   forgotPassword
 );
 
@@ -84,5 +89,6 @@ authRouter.post(
       .custom(validatePassword)
       .withMessage("Password does not meet requirements"),
   ],
+  validate,
   resetPassword
 );

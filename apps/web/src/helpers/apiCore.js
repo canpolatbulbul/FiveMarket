@@ -42,6 +42,15 @@ axiosInstance.interceptors.response.use(
         case 404:
           message = "Sorry! The data you are looking for could not be found.";
           break;
+        case 400:
+          // Handle validation errors with field-specific messages
+          if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+            // Show first validation error message
+            message = data.errors[0].message || data.message || "Please check your input and try again.";
+          } else {
+            message = data?.message || "Please check your input and try again.";
+          }
+          break;
         case 409:
           message = data?.message || "An account with this email already exists. Please log in instead.";
           break;

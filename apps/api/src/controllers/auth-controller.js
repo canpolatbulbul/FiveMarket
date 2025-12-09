@@ -1,4 +1,3 @@
-import { validationResult } from "express-validator";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -17,15 +16,6 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1hr";
  * Users can upgrade to freelancer later via "Become a Freelancer" feature
  */
 export const register = async (req, res) => {
-  const validationErrors = validationResult(req);
-
-  if (!validationErrors.isEmpty()) {
-    return res.status(400).json({
-      error: "Validation failed",
-      errors: validationErrors.array(),
-    });
-  }
-
   const { first_name, last_name, email, password } = req.body;
 
   try {
@@ -132,15 +122,6 @@ export const getCurrentUser = async (req, res) => {
  * Validates credentials and returns JWT token (and optionally refresh token)
  */
 export const login = async (req, res) => {
-  const validationErrors = validationResult(req);
-
-  if (!validationErrors.isEmpty()) {
-    return res.status(400).json({
-      error: "Validation failed",
-      errors: validationErrors.array(),
-    });
-  }
-
   const { email, password, rememberMe } = req.body;
 
   try {
@@ -253,15 +234,6 @@ export const login = async (req, res) => {
  * Generates a reset token and sends email with reset link
  */
 export const forgotPassword = async (req, res) => {
-  const validationErrors = validationResult(req);
-
-  if (!validationErrors.isEmpty()) {
-    return res.status(400).json({
-      error: "Validation failed",
-      errors: validationErrors.array(),
-    });
-  }
-
   const { email } = req.body;
 
   try {
@@ -326,15 +298,6 @@ export const forgotPassword = async (req, res) => {
  * Validates token and updates user's password
  */
 export const resetPassword = async (req, res) => {
-  const validationErrors = validationResult(req);
-
-  if (!validationErrors.isEmpty()) {
-    return res.status(400).json({
-      error: "Validation failed",
-      errors: validationErrors.array(),
-    });
-  }
-
   const { token, password } = req.body;
 
   try {
@@ -417,15 +380,6 @@ export const resetPassword = async (req, res) => {
  * Validates refresh token and issues new access token
  */
 export const refreshToken = async (req, res) => {
-  const validationErrors = validationResult(req);
-
-  if (!validationErrors.isEmpty()) {
-    return res.status(400).json({
-      error: "Validation failed",
-      errors: validationErrors.array(),
-    });
-  }
-
   const { refreshToken } = req.body;
 
   try {
