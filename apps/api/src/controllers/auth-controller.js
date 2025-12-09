@@ -461,3 +461,90 @@ export const refreshToken = async (req, res) => {
     });
   }
 };
+
+/**
+ * Become a Freelancer
+ * Upgrades a client user to also be a freelancer
+ */
+export const becomeFreelancer = async (req, res) => {
+  try {
+    // req.user is populated by checkAuth middleware
+    if (!req.user) {
+      return res.status(401).json({
+        error: "Not authenticated",
+        message: "You must be logged in to become a freelancer",
+      });
+    }
+
+    const userID = req.user.userID; // This is the encoded ID from middleware
+
+    // Decode the userID to get numeric ID for database query
+    const { decodeUserID } = await import("../utils/hashids.js");
+    const numericUserID = decodeUserID(userID);
+
+    // Check if user is already a freelancer
+    const existingFreelancer = await query(
+      'SELECT * FROM freelancer WHERE "userID" = $1',
+      [numericUserID]
+    );
+
+    if (existingFreelancer.rows.length > 0) {
+      return res.status(400).json({
+        error: "Already a freelancer",
+        message: "You are already registered as a freelancer",
+      });
+    }
+
+    // Create freelancer entry
+    await query('INSERT INTO freelancer ("userID") VALUES ($1)', [
+      numericUserID,
+    ]);
+
+    // Fetch updated user with new roles
+    const userQuery = `
+      SELECT 
+        u."userID",
+        u.first_name,
+        u.last_name,
+        u.email,
+        CASE 
+          WHEN EXISTS (SELECT 1 FROM client WHERE "userID" = u."userID") 
+            AND EXISTS (SELECT 1 FROM freelancer WHERE "userID" = u."userID")
+          THEN ARRAY['client', 'freelancer']
+          WHEN EXISTS (SELECT 1 FROM freelancer WHERE "userID" = u."userID")
+          THEN ARRAY['freelancer', 'client']
+          ELSE ARRAY['client']
+        END as roles
+      FROM "user" u
+      WHERE u."userID" = $1
+    `;
+
+    const result = await query(userQuery, [numericUserID]);
+    const user = result.rows[0];
+
+    // Calculate clearance level
+    const clearanceLevels = { client: 1, freelancer: 2, admin: 3 };
+    const userClearance = Math.max(
+      ...user.roles.map((role) => clearanceLevels[role] || 0)
+    );
+
+    // Return updated user data
+    res.status(200).json({
+      message: "Successfully became a freelancer!",
+      user: {
+        userID: encodeUserID(user.userID),
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        roles: user.roles,
+        clearance: userClearance,
+      },
+    });
+  } catch (error) {
+    console.error("Become freelancer error:", error);
+    return res.status(500).json({
+      error: "Failed to become freelancer",
+      message: "An error occurred while upgrading your account",
+    });
+  }
+};
