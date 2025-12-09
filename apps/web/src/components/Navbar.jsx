@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search, Menu, X, ChevronDown, User, Settings, HelpCircle, LogOut, DollarSign, FileText, Shield } from "lucide-react";
+import { Search, Menu, X, ChevronDown, User, Settings, HelpCircle, LogOut, DollarSign, FileText, Shield, Briefcase } from "lucide-react";
 
 export default function Navbar() {
   const { user } = useAuth();
@@ -32,7 +32,7 @@ export default function Navbar() {
   const isAdmin = user?.roles?.includes("admin");
 
   return (
-    <nav className="sticky top-0 z-50 bg-white border-b border-slate-300 shadow-sm mb-10 rounded-xl">
+    <nav className="sticky top-0 z-50 bg-white border-b border-slate-300 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -47,22 +47,25 @@ export default function Navbar() {
 
           {/* Search Bar - Desktop */}
           <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xl mx-8">
-            <div className="relative w-full">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search services..."
-                className="w-full pl-10 pr-4 py-2 rounded-lg border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-200 outline-none"
-              />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+            <div className="relative group w-full">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full blur opacity-20 group-hover:opacity-30 transition duration-300" />
+              <div className="relative flex items-center bg-white rounded-full shadow-md border border-slate-200">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search services..."
+                  className="flex-1 pl-6 pr-4 py-2.5 rounded-l-full outline-none text-sm text-slate-900 placeholder:text-slate-400"
+                />
+                <button
+                  type="submit"
+                  className="my-1 mx-1 px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 shadow-md text-sm"
+                >
+                  <Search className="h-4 w-4" />
+                  <span className="hidden lg:inline">Search</span>
+                </button>
+              </div>
             </div>
-            <button
-              type="submit"
-              className="ml-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-200"
-            >
-              Search
-            </button>
           </form>
 
           {/* Desktop Navigation */}
@@ -73,21 +76,6 @@ export default function Navbar() {
 
             {user ? (
               <>
-                {/* Freelancer-specific */}
-                {isFreelancer && (
-                  <>
-                    <Link to="/my-services" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
-                      My Services
-                    </Link>
-                    <Link
-                      to="/create-service"
-                      className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-200"
-                    >
-                      Create Service
-                    </Link>
-                  </>
-                )}
-
                 {/* Common for logged-in users */}
                 <Link to="/orders" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
                   Orders
@@ -100,6 +88,16 @@ export default function Navbar() {
                 {isAdmin && (
                   <Link to="/admin" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
                     Admin
+                  </Link>
+                )}
+
+                {/* Freelancer Create Service Button - Rightmost */}
+                {isFreelancer && (
+                  <Link
+                    to="/create-service"
+                    className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-200"
+                  >
+                    Create Service
                   </Link>
                 )}
 
@@ -138,6 +136,14 @@ export default function Navbar() {
 
                         {isFreelancer && (
                           <>
+                            <Link
+                              to="/my-services"
+                              className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                              onClick={() => setUserMenuOpen(false)}
+                            >
+                              <Briefcase className="h-4 w-4" />
+                              My Services
+                            </Link>
                             <Link
                               to="/earnings"
                               className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
@@ -217,23 +223,26 @@ export default function Navbar() {
         <div className="md:hidden border-t border-slate-200 bg-white">
           <div className="px-4 py-4 space-y-4">
             {/* Mobile Search */}
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search services..."
-                  className="w-full pl-10 pr-4 py-2 rounded-lg border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-200 outline-none"
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+            <form onSubmit={handleSearch}>
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full blur opacity-20 group-hover:opacity-30 transition duration-300" />
+                <div className="relative flex items-center bg-white rounded-full shadow-md border border-slate-200">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search services..."
+                    className="flex-1 pl-6 pr-4 py-2.5 rounded-l-full outline-none text-sm text-slate-900 placeholder:text-slate-400"
+                  />
+                  <button
+                    type="submit"
+                    className="my-1 mx-1 px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 shadow-md text-sm"
+                  >
+                    <Search className="h-4 w-4" />
+                    Search
+                  </button>
+                </div>
               </div>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold"
-              >
-                Search
-              </button>
             </form>
 
             {/* Mobile Navigation Links */}

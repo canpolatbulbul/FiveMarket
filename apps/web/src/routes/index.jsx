@@ -5,6 +5,7 @@ import ProtectedRoute from "./ProtectedRoute.jsx";
 import {Roles} from "@/helpers/roles.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 
+const LandingPage = lazy(() => import("../pages/Home/LandingPage.jsx"));
 const HomePage = lazy(() => import("../pages/Home/HomePage.jsx"));
 const Register = lazy(() => import("../pages/Auth/Register.jsx"));
 const Login = lazy(() => import("../pages/Auth/Login.jsx"));
@@ -26,11 +27,7 @@ const AllRoutes = () => {
     return useRoutes([
         {
             path: "/",
-            element: user ? <Navigate to="/home" /> : <Navigate to="/auth/login" />
-        },
-        {
-            path: "/home",
-            element: user ? <LoadComponent component={HomePage} /> : <Navigate to="/auth/login" />
+            element: user ? <LoadComponent component={HomePage} /> : <LoadComponent component={LandingPage} />
         },
         {
             path: "/auth",

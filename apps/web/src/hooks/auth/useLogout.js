@@ -26,8 +26,8 @@ export default function useLogout() {
       // Clear user from context
       setUser(null);
 
-      // Redirect to login
-      navigate("/auth/login");
+      // Redirect to landing page.
+      navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
     } finally {

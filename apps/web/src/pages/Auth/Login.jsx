@@ -12,7 +12,7 @@ export default function LoginPage() {
 
   // Redirect if already logged in
   if (user) {
-    return <Navigate to="/home" replace />
+    return <Navigate to="/" replace />
   }
 
   const [formData, setFormData] = useState({

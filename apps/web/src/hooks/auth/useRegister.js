@@ -29,7 +29,7 @@ export default function useRegister() {
       api.storeToken(response.data.token);
       setAuthorization(response.data.token);
       // Navigate to home after successful registeration.
-      navigate("/home");
+      navigate("/");
     } catch (error) {
       setError(error.message);
       throw error;
