@@ -1,8 +1,8 @@
-import React, {lazy, Suspense} from "react";
-import {useRoutes, Navigate} from "react-router-dom";
-import {useAuth} from "@/contexts/AuthContext.jsx";
+import React, { lazy, Suspense } from "react";
+import { useRoutes, Navigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
-import {Roles} from "@/helpers/roles.js";
+import { Roles } from "@/helpers/roles.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 
 const HomePage = lazy(() => import("../pages/Home/HomePage.jsx"));
@@ -14,7 +14,7 @@ const TermsAndConditions = lazy(() => import("../pages/Legal/TermsAndConditions.
 const PrivacyPolicy = lazy(() => import("../pages/Legal/PrivacyPolicy.jsx"));
 const Logout = lazy(() => import("../pages/Auth/Logout.jsx"));
 
-const LoadComponent = ({component: Component}) => (
+const LoadComponent = ({ component: Component }) => (
     <Suspense fallback={<LoadingSpinner fullScreen />}>
         <Component />
     </Suspense>
@@ -30,7 +30,11 @@ const AllRoutes = () => {
         },
         {
             path: "/home",
-            element: user ? <LoadComponent component={HomePage} /> : <Navigate to="/auth/login" />
+            element: (
+                <ProtectedRoute>
+                    <LoadComponent component={HomePage} />
+                </ProtectedRoute>
+            ),
         },
         {
             path: "/auth",
@@ -48,6 +52,10 @@ const AllRoutes = () => {
                 {path:"terms",element: <LoadComponent component={TermsAndConditions} />},
                 {path:"privacy",element: <LoadComponent component={PrivacyPolicy} />}
             ]
+        },
+        {
+            path: "/login",
+            element: <Navigate to="/auth/login" replace />
         },
         {
             path: "*",
