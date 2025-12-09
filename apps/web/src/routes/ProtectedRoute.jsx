@@ -14,7 +14,7 @@ const ProtectedRoute = ({ children, requiredClearance, requiredRole }) => {
 
     // Check if user is authenticated
     if (!user) {
-        return <Navigate to="/login" />;
+        return <Navigate to="/auth/login" />;
     }
 
     // If specific role is required, check exact match
