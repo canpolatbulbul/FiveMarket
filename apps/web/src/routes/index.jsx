@@ -1,10 +1,11 @@
-import React, { lazy, Suspense } from "react";
-import { useRoutes, Navigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext.jsx";
+import React, {lazy, Suspense} from "react";
+import {useRoutes, Navigate} from "react-router-dom";
+import {useAuth} from "@/contexts/AuthContext.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
-import { Roles } from "@/helpers/roles.js";
+import {Roles} from "@/helpers/roles.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 
+const LandingPage = lazy(() => import("../pages/Home/LandingPage.jsx"));
 const HomePage = lazy(() => import("../pages/Home/HomePage.jsx"));
 const Register = lazy(() => import("../pages/Auth/Register.jsx"));
 const Login = lazy(() => import("../pages/Auth/Login.jsx"));
@@ -14,7 +15,7 @@ const TermsAndConditions = lazy(() => import("../pages/Legal/TermsAndConditions.
 const PrivacyPolicy = lazy(() => import("../pages/Legal/PrivacyPolicy.jsx"));
 const Logout = lazy(() => import("../pages/Auth/Logout.jsx"));
 
-const LoadComponent = ({ component: Component }) => (
+const LoadComponent = ({component: Component}) => (
     <Suspense fallback={<LoadingSpinner fullScreen />}>
         <Component />
     </Suspense>
@@ -26,15 +27,7 @@ const AllRoutes = () => {
     return useRoutes([
         {
             path: "/",
-            element: user ? <Navigate to="/home" /> : <Navigate to="/auth/login" />
-        },
-        {
-            path: "/home",
-            element: (
-                <ProtectedRoute>
-                    <LoadComponent component={HomePage} />
-                </ProtectedRoute>
-            ),
+            element: user ? <LoadComponent component={HomePage} /> : <LoadComponent component={LandingPage} />
         },
         {
             path: "/auth",
@@ -52,10 +45,6 @@ const AllRoutes = () => {
                 {path:"terms",element: <LoadComponent component={TermsAndConditions} />},
                 {path:"privacy",element: <LoadComponent component={PrivacyPolicy} />}
             ]
-        },
-        {
-            path: "/login",
-            element: <Navigate to="/auth/login" replace />
         },
         {
             path: "*",

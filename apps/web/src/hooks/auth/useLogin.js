@@ -33,7 +33,7 @@ export default function useLogin() {
       }
 
       // Navigate to home after successful login
-      navigate("/home");
+      navigate("/");
     } catch (error) {
       setError(error.message);
       throw error;

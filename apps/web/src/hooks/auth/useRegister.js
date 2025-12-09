@@ -28,8 +28,8 @@ export default function useRegister() {
       setUser(response.data.user);
       api.storeToken(response.data.token);
       setAuthorization(response.data.token);
-      // Navigate to home after successful registration
-      navigate("/home");
+      // Navigate to home after successful registration.
+      navigate("/");
     } catch (error) {
       setError(error.message);
       throw error;

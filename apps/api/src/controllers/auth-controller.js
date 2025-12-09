@@ -3,7 +3,13 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import crypto from "node:crypto";
 import { tx } from "../db/tx.js";
+import { query } from "../db/index.js";
 import { encodeUserID } from "../utils/hashids.js";
+import {
+  generateRefreshToken,
+  hashRefreshToken,
+} from "../utils/refresh-token.js";
+import { sendPasswordResetEmail } from "../utils/email.js";
 
 dotenv.config();
 
@@ -125,12 +131,6 @@ export const login = async (req, res) => {
   const { email, password, rememberMe } = req.body;
 
   try {
-    // Import query function and refresh token utilities
-    const { query } = await import("../db/index.js");
-    const { generateRefreshToken, hashRefreshToken } = await import(
-      "../utils/refresh-token.js"
-    );
-
     // Find user by email and get their roles
     const userQuery = `
       SELECT 
@@ -237,9 +237,6 @@ export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
   try {
-    const { query } = await import("../db/index.js");
-    const { sendPasswordResetEmail } = await import("../utils/email.js");
-
     // Find user by email
     const userResult = await query(
       'SELECT "userID", first_name, email FROM "user" WHERE email = $1',
@@ -301,8 +298,6 @@ export const resetPassword = async (req, res) => {
   const { token, password } = req.body;
 
   try {
-    const { query } = await import("../db/index.js");
-
     // Hash the token to compare with stored hash
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
@@ -383,9 +378,6 @@ export const refreshToken = async (req, res) => {
   const { refreshToken } = req.body;
 
   try {
-    const { query } = await import("../db/index.js");
-    const { hashRefreshToken } = await import("../utils/refresh-token.js");
-
     // Hash the refresh token to compare with stored hash
     const hashedToken = hashRefreshToken(refreshToken);
 

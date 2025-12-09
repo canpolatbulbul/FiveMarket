@@ -196,4 +196,4 @@ class APICore {
   };
 }
 
-export { APICore, setAuthorization };
+export { APICore, setAuthorization, getTokenFromStorage };

@@ -1,6 +1,6 @@
 import {createContext, useContext, useEffect, useState} from "react";
 import {jwtDecode} from "jwt-decode";
-import {APICore, setAuthorization} from "../helpers/apiCore.js";
+import {APICore, setAuthorization, getTokenFromStorage} from "../helpers/apiCore.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 
 
@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const initializeAuth = async () => {
             const api = new APICore();
-            const token = localStorage.getItem("token");
+            const token = getTokenFromStorage(); // Check both localStorage and sessionStorage
             const refreshToken = localStorage.getItem("refreshToken");
             
             if (token) {
@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }) => {
                     } catch (error) {
                         console.error("Failed to fetch user:", error);
                         localStorage.removeItem("token");
+                        sessionStorage.removeItem("token");
                     }
                 } else if (refreshToken) {
                     // Token expired but we have a refresh token
