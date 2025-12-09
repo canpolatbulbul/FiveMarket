@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import BecomeFreelancerModal from "@/components/BecomeFreelancerModal";
+import { useBecomeFreelancer } from "@/hooks/auth/useBecomeFreelancer";
+import { toast } from "sonner";
 import { Search, Menu, X, ChevronDown, User, Settings, HelpCircle, LogOut, DollarSign, FileText, Briefcase } from "lucide-react";
 
 export default function Navbar() {
@@ -9,6 +12,9 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showBecomeFreelancerModal, setShowBecomeFreelancerModal] = useState(false);
+  
+  const { becomeFreelancer, loading: becomingFreelancer } = useBecomeFreelancer();
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -30,8 +36,25 @@ export default function Navbar() {
   // Check if user is freelancer
   const isFreelancer = user?.roles?.includes("freelancer");
   const isAdmin = user?.roles?.includes("admin");
+  const isClientOnly = user && !isFreelancer && !isAdmin;
+
+  const handleBecomeFreelancer = async () => {
+    const result = await becomeFreelancer();
+    if (result.success) {
+      setShowBecomeFreelancerModal(false);
+      toast.success("Congratulations! You're now a freelancer!", {
+        description: "You can now create and manage services.",
+        duration: 5000,
+      });
+    } else {
+      toast.error("Failed to become a freelancer", {
+        description: result.error || "Please try again later.",
+      });
+    }
+  };
 
   return (
+    <>
     <nav className="sticky top-0 z-50 bg-white border-b border-slate-300 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -99,6 +122,17 @@ export default function Navbar() {
                   >
                     Create Service
                   </Link>
+                )}
+
+                {/* Become a Freelancer Button - For clients only */}
+                {isClientOnly && (
+                  <button
+                    onClick={() => setShowBecomeFreelancerModal(true)}
+                    className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                  >
+                    <Briefcase className="h-4 w-4" />
+                    Become a Freelancer
+                  </button>
                 )}
 
                 {/* User Menu */}
@@ -391,5 +425,14 @@ export default function Navbar() {
         </div>
       )}
     </nav>
+
+      {/* Become a Freelancer Modal */}
+      <BecomeFreelancerModal
+        open={showBecomeFreelancerModal}
+        onOpenChange={setShowBecomeFreelancerModal}
+        onConfirm={handleBecomeFreelancer}
+        loading={becomingFreelancer}
+      />
+    </>
   );
 }

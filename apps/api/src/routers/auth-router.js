@@ -10,12 +10,16 @@ import {
   forgotPassword,
   resetPassword,
   refreshToken,
+  becomeFreelancer,
 } from "../controllers/auth-controller.js";
 
 export const authRouter = express.Router();
 
 // Get current user (requires authentication)
 authRouter.get("/me", checkAuth, getCurrentUser);
+
+// Become a freelancer (requires authentication)
+authRouter.post("/become-freelancer", checkAuth, becomeFreelancer);
 
 // Custom password validator with helpful messages
 const validatePassword = (value) => {
@@ -32,7 +36,9 @@ const validatePassword = (value) => {
     throw new Error("Password must contain at least one number");
   }
   if (!/[^a-zA-Z0-9]/.test(value)) {
-    throw new Error("Password must contain at least one special character (!@#$%^&* etc.)");
+    throw new Error(
+      "Password must contain at least one special character (!@#$%^&* etc.)"
+    );
   }
   return true;
 };

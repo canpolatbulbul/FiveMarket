@@ -74,7 +74,12 @@ export const AuthProvider = ({ children }) => {
         return <LoadingSpinner fullScreen />;
     }
 
-    return <AuthContext.Provider value={{ user, setUser }}>{children}</AuthContext.Provider>;
+    // Function to update user data (e.g., after becoming a freelancer)
+    const updateUser = (updatedUser) => {
+        setUser(updatedUser);
+    };
+
+    return <AuthContext.Provider value={{ user, setUser, updateUser }}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
