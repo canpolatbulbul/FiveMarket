@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import BecomeFreelancerModal from "@/components/BecomeFreelancerModal";
 import { useBecomeFreelancer } from "@/hooks/auth/useBecomeFreelancer";
+import { toast } from "sonner";
 import { Search, Menu, X, ChevronDown, User, Settings, HelpCircle, LogOut, DollarSign, FileText, Briefcase } from "lucide-react";
 
 export default function Navbar() {
@@ -41,7 +42,14 @@ export default function Navbar() {
     const result = await becomeFreelancer();
     if (result.success) {
       setShowBecomeFreelancerModal(false);
-      // Could add a toast notification here
+      toast.success("Congratulations! You're now a freelancer!", {
+        description: "You can now create and manage services.",
+        duration: 5000,
+      });
+    } else {
+      toast.error("Failed to become a freelancer", {
+        description: result.error || "Please try again later.",
+      });
     }
   };
 
