@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Star, Shield, Clock, CreditCard, TrendingUp, Code, Palette, Video, Megaphone, PenTool, Music, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Search, Star, Shield, Clock, CreditCard, TrendingUp, Code, Palette, Video, Megaphone, PenTool, Music, ArrowRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
 export default function LandingPage() {
