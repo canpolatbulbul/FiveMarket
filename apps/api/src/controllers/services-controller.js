@@ -18,7 +18,14 @@ export const getFeaturedServices = async (req, res) => {
         MIN(p.price) as min_price,
         COUNT(DISTINCT p.package_id) as package_count,
         COALESCE(AVG(r.rating), 5.0) as avg_rating,
-        COUNT(DISTINCT r.review_id) as review_count
+        COUNT(DISTINCT r.review_id) as review_count,
+        (
+          SELECT pi.file_path 
+          FROM portfolio_image pi 
+          WHERE pi.service_id = s.service_id 
+          ORDER BY pi.display_order 
+          LIMIT 1
+        ) as portfolio_image
       FROM service s
       JOIN "user" u ON s.freelancer_id = u."userID"
       JOIN package p ON s.service_id = p.service_id
@@ -41,6 +48,7 @@ export const getFeaturedServices = async (req, res) => {
       package_count: parseInt(row.package_count),
       rating: parseFloat(row.avg_rating).toFixed(1),
       reviews: parseInt(row.review_count),
+      portfolio_image: row.portfolio_image, // First portfolio image or null
     }));
 
     res.json({ services });
@@ -341,7 +349,14 @@ export const searchServices = async (req, res) => {
         service_stats.min_delivery,
         service_stats.avg_rating,
         service_stats.review_count,
-        s.created_at
+        s.created_at,
+        (
+          SELECT pi.file_path 
+          FROM portfolio_image pi 
+          WHERE pi.service_id = s.service_id 
+          ORDER BY pi.display_order 
+          LIMIT 1
+        ) as portfolio_image
       FROM (
         SELECT 
           s.service_id,
@@ -389,6 +404,7 @@ export const searchServices = async (req, res) => {
       rating: parseFloat(row.avg_rating).toFixed(1),
       reviews: parseInt(row.review_count),
       created_at: row.created_at,
+      portfolio_image: row.portfolio_image, // First portfolio image or null
     }));
 
     res.json({

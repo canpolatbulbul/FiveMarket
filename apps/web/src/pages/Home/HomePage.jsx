@@ -171,9 +171,17 @@ export default function HomePage() {
                 >
                   {/* Image/Thumbnail */}
                   <div className="relative h-40 bg-gradient-to-br from-blue-100 via-cyan-50 to-indigo-100 overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center text-5xl group-hover:scale-110 transition-transform duration-300">
-                      {service.category_emoji || "💼"}
-                    </div>
+                    {service.portfolio_image ? (
+                      <img
+                        src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${service.portfolio_image}`}
+                        alt={service.title}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-5xl group-hover:scale-110 transition-transform duration-300">
+                        {service.category_emoji || "💼"}
+                      </div>
+                    )}
                     {/* Rating badge */}
                     <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-sm">
                       <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
