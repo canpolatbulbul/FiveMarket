@@ -4,6 +4,29 @@ import path from "path";
 import { UPLOADS_BASE_DIR } from "../utils/config.js";
 
 /**
+ * Helper function to delete a portfolio image file from disk
+ * @param {string} filePath - The file path stored in the database (e.g., /uploads/portfolio/filename.jpg)
+ * @returns {Promise<void>}
+ */
+async function deleteImageFile(filePath) {
+  // Remove leading slash from file_path if present for proper path.join behavior
+  const relativePath = filePath.startsWith('/') 
+    ? filePath.substring(1) 
+    : filePath;
+  const actualFilePath = path.join(UPLOADS_BASE_DIR, relativePath);
+  
+  try {
+    await fs.unlink(actualFilePath);
+  } catch (fileError) {
+    // Log error but don't throw - file deletion failures shouldn't fail the HTTP response
+    // ENOENT errors are acceptable (file already doesn't exist)
+    if (fileError.code !== 'ENOENT') {
+      console.error("Error deleting image file:", fileError);
+    }
+  }
+}
+
+/**
  * Get featured/trending services
  * Returns top services ordered by reviews and ratings
  */
@@ -860,23 +883,9 @@ export const deleteService = async (req, res) => {
     await query("DELETE FROM service WHERE service_id = $1", [id]);
 
     // Delete all portfolio image files from disk concurrently
-    const deletePromises = imagesResult.rows.map(async (image) => {
-      // Remove leading slash from file_path if present for proper path.join behavior
-      const relativePath = image.file_path.startsWith('/') 
-        ? image.file_path.substring(1) 
-        : image.file_path;
-      const actualFilePath = path.join(UPLOADS_BASE_DIR, relativePath);
-      
-      try {
-        await fs.unlink(actualFilePath);
-      } catch (fileError) {
-        // Log error but don't fail the request since DB records are already deleted
-        // ENOENT errors are acceptable (file already doesn't exist)
-        if (fileError.code !== 'ENOENT') {
-          console.error("Error deleting image file:", fileError);
-        }
-      }
-    });
+    const deletePromises = imagesResult.rows.map((image) => 
+      deleteImageFile(image.file_path)
+    );
 
     // Wait for all file deletions to complete
     await Promise.allSettled(deletePromises);
@@ -946,22 +955,7 @@ export const deletePortfolioImage = async (req, res) => {
     );
 
     // Delete the actual file from disk asynchronously
-    // file_path is stored as /uploads/portfolio/filename.jpg
-    // Remove leading slash for proper path.join behavior
-    const relativePath = filePath.startsWith('/') 
-      ? filePath.substring(1) 
-      : filePath;
-    const actualFilePath = path.join(UPLOADS_BASE_DIR, relativePath);
-    
-    try {
-      await fs.unlink(actualFilePath);
-    } catch (fileError) {
-      // Log error but don't fail the request since DB record is already deleted
-      // ENOENT errors are acceptable (file already doesn't exist)
-      if (fileError.code !== 'ENOENT') {
-        console.error("Error deleting image file:", fileError);
-      }
-    }
+    await deleteImageFile(filePath);
 
     res.json({
       success: true,
