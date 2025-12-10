@@ -3,7 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { APICore } from "@/helpers/apiCore";
-import { Search, SlidersHorizontal, Star, Clock, Calendar } from "lucide-react";
+import { SlidersHorizontal, Star, Clock, Calendar } from "lucide-react";
 
 export default function BrowsePage() {
   const [searchParams, setSearchParams] = useSearchParams();

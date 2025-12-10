@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { APICore } from "@/helpers/apiCore";
-import { Star, Clock, User, Calendar, Award, ShoppingCart, ChevronLeft, ChevronRight, Image as ImageIcon } from "lucide-react";
+import { Star, Clock, Calendar, Award, ShoppingCart, ChevronLeft, ChevronRight, Image as ImageIcon } from "lucide-react";
 
 export default function ServiceDetailPage() {
   const { id } = useParams();

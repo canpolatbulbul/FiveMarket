@@ -9,7 +9,6 @@ import {
   Upload, 
   X, 
   Check,
-  Image as ImageIcon,
   Plus,
   Trash2
 } from "lucide-react";
