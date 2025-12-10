@@ -31,13 +31,13 @@ TRUNCATE TABLE freelancer CASCADE;
 TRUNCATE TABLE client CASCADE;
 TRUNCATE TABLE "user" CASCADE;
 
--- Reset sequences
-ALTER SEQUENCE "user_userID_seq" RESTART WITH 1;
-ALTER SEQUENCE service_service_id_seq RESTART WITH 1;
-ALTER SEQUENCE package_package_id_seq RESTART WITH 1;
-ALTER SEQUENCE service_category_category_id_seq RESTART WITH 1;
-ALTER SEQUENCE order_order_id_seq RESTART WITH 1;
-ALTER SEQUENCE money_transaction_transaction_id_seq RESTART WITH 1;
+-- Reset sequences to start after seed data
+ALTER SEQUENCE "user_userID_seq" RESTART WITH 23;
+ALTER SEQUENCE service_service_id_seq RESTART WITH 17;
+ALTER SEQUENCE package_package_id_seq RESTART WITH 49;
+ALTER SEQUENCE service_category_category_id_seq RESTART WITH 11;
+ALTER SEQUENCE order_order_id_seq RESTART WITH 11;
+ALTER SEQUENCE money_transaction_transaction_id_seq RESTART WITH 5;
 ALTER SEQUENCE conversation_conversation_id_seq RESTART WITH 1;
 ALTER SEQUENCE revision_request_revision_id_seq RESTART WITH 1;
 ALTER SEQUENCE review_review_id_seq RESTART WITH 1;
@@ -164,86 +164,86 @@ INSERT INTO service (service_id, freelancer_id, title, description) VALUES
 (16, 18, 'Complete SEO Optimization', 'On-page and off-page SEO to boost your website rankings and organic traffic.');
 
 -- Packages for each service
-INSERT INTO package (package_id, service_id, name, description, price) VALUES
+INSERT INTO package (package_id, service_id, name, description, price, delivery_time) VALUES
 -- Logo Design (Service 1)
-(1, 1, 'Basic', '1 logo concept, 2 revisions, source files', 50.00),
-(2, 1, 'Standard', '3 logo concepts, 5 revisions, source files, social media kit', 150.00),
-(3, 1, 'Premium', '5 logo concepts, unlimited revisions, full brand guidelines', 300.00),
+(1, 1, 'Basic', '1 logo concept, 2 revisions, source files', 50.00, 3),
+(2, 1, 'Standard', '3 logo concepts, 5 revisions, source files, social media kit', 150.00, 5),
+(3, 1, 'Premium', '5 logo concepts, unlimited revisions, full brand guidelines', 300.00, 7),
 
 -- Logo Design (Service 2)
-(4, 2, 'Basic', 'Logo design with 3 revisions', 75.00),
-(5, 2, 'Standard', 'Logo + business card design', 200.00),
-(6, 2, 'Premium', 'Complete brand identity package', 500.00),
+(4, 2, 'Basic', 'Logo design with 3 revisions', 75.00, 3),
+(5, 2, 'Standard', 'Logo + business card design', 200.00, 5),
+(6, 2, 'Premium', 'Complete brand identity package', 500.00, 10),
 
 -- Web Development (Service 3)
-(7, 3, 'Basic', 'Simple landing page (5 sections)', 400.00),
-(8, 3, 'Standard', 'Multi-page website with CMS', 1200.00),
-(9, 3, 'Premium', 'Full-stack web application', 3000.00),
+(7, 3, 'Basic', 'Simple landing page (5 sections)', 400.00, 5),
+(8, 3, 'Standard', 'Multi-page website with CMS', 1200.00, 10),
+(9, 3, 'Premium', 'Full-stack web application', 3000.00, 21),
 
 -- WordPress (Service 4)
-(10, 4, 'Basic', 'Basic WordPress site (5 pages)', 300.00),
-(11, 4, 'Standard', 'Custom theme + plugins (10 pages)', 800.00),
-(12, 4, 'Premium', 'E-commerce WordPress site', 1500.00),
+(10, 4, 'Basic', 'Basic WordPress site (5 pages)', 300.00, 5),
+(11, 4, 'Standard', 'Custom theme + plugins (10 pages)', 800.00, 10),
+(12, 4, 'Premium', 'E-commerce WordPress site', 1500.00, 14),
 
 -- Content Writing (Service 5)
-(13, 5, 'Basic', '1 SEO article (1000 words)', 30.00),
-(14, 5, 'Standard', '5 SEO articles (1000 words each)', 125.00),
-(15, 5, 'Premium', '10 SEO articles + keyword research', 220.00),
+(13, 5, 'Basic', '1 SEO article (1000 words)', 30.00, 2),
+(14, 5, 'Standard', '5 SEO articles (1000 words each)', 125.00, 5),
+(15, 5, 'Premium', '10 SEO articles + keyword research', 220.00, 7),
 
 -- Copywriting (Service 6)
-(16, 6, 'Basic', 'Website copy (3 pages)', 100.00),
-(17, 6, 'Standard', 'Complete website copy + email sequence', 300.00),
-(18, 6, 'Premium', 'Full marketing copy package', 600.00),
+(16, 6, 'Basic', 'Website copy (3 pages)', 100.00, 3),
+(17, 6, 'Standard', 'Complete website copy + email sequence', 300.00, 5),
+(18, 6, 'Premium', 'Full marketing copy package', 600.00, 7),
 
 -- Video Editing (Service 7)
-(19, 7, 'Basic', 'Edit 1 video (up to 5 minutes)', 80.00),
-(20, 7, 'Standard', 'Edit 3 videos with color grading', 200.00),
-(21, 7, 'Premium', 'Edit 5 videos + motion graphics', 400.00),
+(19, 7, 'Basic', 'Edit 1 video (up to 5 minutes)', 80.00, 2),
+(20, 7, 'Standard', 'Edit 3 videos with color grading', 200.00, 4),
+(21, 7, 'Premium', 'Edit 5 videos + motion graphics', 400.00, 7),
 
 -- Animation (Service 8)
-(22, 8, 'Basic', '30-second animation', 150.00),
-(23, 8, 'Standard', '60-second explainer video', 350.00),
-(24, 8, 'Premium', '2-minute animated video', 700.00),
+(22, 8, 'Basic', '30-second animation', 150.00, 5),
+(23, 8, 'Standard', '60-second explainer video', 350.00, 7),
+(24, 8, 'Premium', '2-minute animated video', 700.00, 10),
 
 -- Social Media Marketing (Service 9)
-(25, 9, 'Basic', 'Social media strategy document', 200.00),
-(26, 9, 'Standard', '1 month social media management', 500.00),
-(27, 9, 'Premium', '3 months full management + ads', 1400.00),
+(25, 9, 'Basic', 'Social media strategy document', 200.00, 3),
+(26, 9, 'Standard', '1 month social media management', 500.00, 30),
+(27, 9, 'Premium', '3 months full management + ads', 1400.00, 90),
 
 -- Facebook Ads (Service 10)
-(28, 10, 'Basic', 'Ad campaign setup + 1 week management', 250.00),
-(29, 10, 'Standard', '1 month ad management', 600.00),
-(30, 10, 'Premium', '3 months + advanced optimization', 1600.00),
+(28, 10, 'Basic', 'Ad campaign setup + 1 week management', 250.00, 7),
+(29, 10, 'Standard', '1 month ad management', 600.00, 30),
+(30, 10, 'Premium', '3 months + advanced optimization', 1600.00, 90),
 
 -- Python Scripts (Service 11)
-(31, 11, 'Basic', 'Simple automation script', 100.00),
-(32, 11, 'Standard', 'Complex automation with error handling', 300.00),
-(33, 11, 'Premium', 'Full automation suite with GUI', 700.00),
+(31, 11, 'Basic', 'Simple automation script', 100.00, 3),
+(32, 11, 'Standard', 'Complex automation with error handling', 300.00, 5),
+(33, 11, 'Premium', 'Full automation suite with GUI', 700.00, 10),
 
 -- Data Analysis (Service 12)
-(34, 12, 'Basic', 'Basic data analysis report', 150.00),
-(35, 12, 'Standard', 'Comprehensive analysis + visualizations', 400.00),
-(36, 12, 'Premium', 'Advanced analytics + dashboard', 900.00),
+(34, 12, 'Basic', 'Basic data analysis report', 150.00, 3),
+(35, 12, 'Standard', 'Comprehensive analysis + visualizations', 400.00, 5),
+(36, 12, 'Premium', 'Advanced analytics + dashboard', 900.00, 10),
 
 -- Music Production (Service 13)
-(37, 13, 'Basic', 'Mix 1 song', 120.00),
-(38, 13, 'Standard', 'Mix + master 1 song', 250.00),
-(39, 13, 'Premium', 'Full production (3 songs)', 800.00),
+(37, 13, 'Basic', 'Mix 1 song', 120.00, 3),
+(38, 13, 'Standard', 'Mix + master 1 song', 250.00, 5),
+(39, 13, 'Premium', 'Full production (3 songs)', 800.00, 14),
 
 -- Voice Over (Service 14)
-(40, 14, 'Basic', 'Up to 100 words', 50.00),
-(41, 14, 'Standard', 'Up to 500 words', 150.00),
-(42, 14, 'Premium', 'Up to 1000 words + revisions', 300.00),
+(40, 14, 'Basic', 'Up to 100 words', 50.00, 1),
+(41, 14, 'Standard', 'Up to 500 words', 150.00, 2),
+(42, 14, 'Premium', 'Up to 1000 words + revisions', 300.00, 3),
 
 -- Translation (Service 15)
-(43, 15, 'Basic', 'Translate up to 500 words', 40.00),
-(44, 15, 'Standard', 'Translate up to 2000 words', 120.00),
-(45, 15, 'Premium', 'Translate up to 5000 words + proofreading', 280.00),
+(43, 15, 'Basic', 'Translate up to 500 words', 40.00, 2),
+(44, 15, 'Standard', 'Translate up to 2000 words', 120.00, 4),
+(45, 15, 'Premium', 'Translate up to 5000 words + proofreading', 280.00, 7),
 
 -- SEO (Service 16)
-(46, 16, 'Basic', 'SEO audit report', 150.00),
-(47, 16, 'Standard', 'On-page SEO optimization', 400.00),
-(48, 16, 'Premium', 'Complete SEO package (3 months)', 1200.00);
+(46, 16, 'Basic', 'SEO audit report', 150.00, 3),
+(47, 16, 'Standard', 'On-page SEO optimization', 400.00, 7),
+(48, 16, 'Premium', 'Complete SEO package (3 months)', 1200.00, 90);
 
 -- ============================================================================
 -- Services in Categories

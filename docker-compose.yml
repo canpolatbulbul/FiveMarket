@@ -29,6 +29,7 @@ services:
     volumes:
       - ./apps/api/src:/app/apps/api/src
       - ./apps/api/package.json:/app/apps/api/package.json
+      - ./uploads:/app/uploads
     command: sh -c "node /app/db/scripts/migrate.js && npm run dev"
 
 volumes:

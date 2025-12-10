@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import BecomeFreelancerModal from "@/components/BecomeFreelancerModal";
 import { useBecomeFreelancer } from "@/hooks/auth/useBecomeFreelancer";
 import { toast } from "sonner";
-import { Search, Menu, X, ChevronDown, User, Settings, HelpCircle, LogOut, DollarSign, FileText, Briefcase } from "lucide-react";
+import { Search, Menu, X, ChevronDown, User, Settings, HelpCircle, LogOut, DollarSign, FileText, Briefcas } from "lucide-react";
 
 export default function Navbar() {
   const { user } = useAuth();
@@ -19,7 +19,7 @@ export default function Navbar() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      navigate(`/browse?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery("");
       setMobileMenuOpen(false);
     }
@@ -117,7 +117,7 @@ export default function Navbar() {
                 {/* Freelancer Create Service Button - Rightmost */}
                 {isFreelancer && (
                   <Link
-                    to="/create-service"
+                    to="/services/create"
                     className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-200"
                   >
                     Create Service

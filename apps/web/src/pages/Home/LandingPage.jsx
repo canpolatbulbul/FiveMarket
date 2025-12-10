@@ -10,7 +10,12 @@ export default function LandingPage() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      // Redirect to signup with search query in state
+      navigate('/auth/register', { 
+        state: { 
+          redirectTo: `/browse?q=${encodeURIComponent(searchQuery.trim())}` 
+        } 
+      });
     }
   };
 

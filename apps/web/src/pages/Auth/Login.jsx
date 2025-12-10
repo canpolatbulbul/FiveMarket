@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link, Navigate } from "react-router-dom"
+import { Link, useLocation, Navigate, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Eye, EyeOff, X } from "lucide-react"
 import useLogin from "@/hooks/auth/useLogin"
@@ -7,12 +7,15 @@ import { useAuth } from "@/contexts/AuthContext"
 
 export default function LoginPage() {
   const { user } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const redirectTo = location.state?.redirectTo || "/"
   const { login, error: loginError, isLoading: loginLoading } = useLogin()
   const [showPassword, setShowPassword] = useState(false)
 
   // Redirect if already logged in
   if (user) {
-    return <Navigate to="/" replace />
+    return <Navigate to={redirectTo} replace />
   }
 
   const [formData, setFormData] = useState({
@@ -84,7 +87,8 @@ export default function LoginPage() {
           password: formData.password,
           rememberMe: formData.rememberMe,
         })
-        // Success! User is now logged in and redirected
+        // Navigate after successful login
+        navigate(redirectTo)
       } catch (err) {
         // Error is handled by the hook
       }
@@ -238,7 +242,11 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-slate-600 mt-6">
             {"Don't have an account? "}
-            <Link to="/auth/register" className="text-indigo-600 hover:text-indigo-700 hover:underline font-semibold">
+            <Link 
+              to="/auth/register" 
+              state={{ redirectTo }}
+              className="text-indigo-600 hover:text-indigo-700 hover:underline font-semibold"
+            >
               Sign up
             </Link>
           </p>

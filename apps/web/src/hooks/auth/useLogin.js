@@ -32,8 +32,8 @@ export default function useLogin() {
         localStorage.setItem("refreshToken", response.data.refreshToken);
       }
 
-      // Navigate to home after successful login
-      navigate("/");
+      // Don't navigate here - let the component handle it
+      // This allows for flexible redirect logic
     } catch (error) {
       setError(error.message);
       throw error;

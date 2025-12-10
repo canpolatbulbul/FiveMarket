@@ -28,8 +28,8 @@ export default function useRegister() {
       setUser(response.data.user);
       api.storeToken(response.data.token);
       setAuthorization(response.data.token);
-      // Navigate to home after successful registration.
-      navigate("/");
+      // Don't navigate here - let the component handle it
+      // This allows for flexible redirect logic
     } catch (error) {
       setError(error.message);
       throw error;
