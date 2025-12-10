@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import BecomeFreelancerModal from "@/components/BecomeFreelancerModal";
 import { useBecomeFreelancer } from "@/hooks/auth/useBecomeFreelancer";
 import { toast } from "sonner";
-import { Search, Menu, X, ChevronDown, User, Settings, HelpCircle, LogOut, DollarSign, FileText, Briefcase } from "lucide-react";
+import { Search, Menu, X, ChevronDown, User, Settings, HelpCircle, LogOut, DollarSign, FileText, Briefcase, Package } from "lucide-react";
 
 export default function Navbar() {
   const { user } = useAuth();

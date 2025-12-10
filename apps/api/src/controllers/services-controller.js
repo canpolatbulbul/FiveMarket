@@ -185,12 +185,23 @@ export const getServiceById = async (req, res) => {
       display_order: img.display_order,
     }));
 
+    // Get category IDs for this service
+    const categoryIdsQuery = `
+      SELECT DISTINCT sic.category_id
+      FROM services_in_category sic
+      JOIN package p ON sic.package_id = p.package_id
+      WHERE p.service_id = $1
+    `;
+    const categoryIdsResult = await query(categoryIdsQuery, [id]);
+    const category_ids = categoryIdsResult.rows.map((row) => row.category_id);
+
     res.json({
       service: {
         service_id: service.service_id,
         title: service.title,
         description: service.description,
         category_name: service.category_name,
+        category_ids: category_ids, // Add category IDs array
         freelancer_id: service.freelancer_id,
         freelancer_name: `${service.first_name} ${service.last_name}`,
         freelancer_email: service.email,
@@ -555,6 +566,430 @@ export const createService = async (req, res) => {
     res.status(500).json({
       error: "Failed to create service",
       message: error.message || "An error occurred while creating the service",
+    });
+  }
+};
+/**
+ * Get all services for the authenticated freelancer
+ * Returns services with stats (orders, ratings, etc.)
+ */
+export const getMyServices = async (req, res) => {
+  try {
+    const { decodeUserID } = await import("../utils/hashids.js");
+    const freelancer_id = decodeUserID(req.user.userID);
+
+    const servicesQuery = `
+      SELECT 
+        s.service_id,
+        s.title,
+        s.description,
+        s.created_at,
+        COUNT(DISTINCT p.package_id) as package_count,
+        MIN(p.price) as min_price,
+        COUNT(DISTINCT o.order_id) as total_orders,
+        COALESCE(AVG(r.rating), 0) as avg_rating,
+        COUNT(DISTINCT r.review_id) as review_count,
+        (
+          SELECT pi.file_path 
+          FROM portfolio_image pi 
+          WHERE pi.service_id = s.service_id 
+          ORDER BY pi.display_order 
+          LIMIT 1
+        ) as portfolio_image
+      FROM service s
+      LEFT JOIN package p ON s.service_id = p.service_id
+      LEFT JOIN "order" o ON p.package_id = o.package_id
+      LEFT JOIN review r ON o.order_id = r.order_id
+      WHERE s.freelancer_id = $1
+      GROUP BY s.service_id, s.title, s.description, s.created_at
+      ORDER BY s.created_at DESC
+    `;
+
+    const result = await query(servicesQuery, [freelancer_id]);
+
+    const services = result.rows.map((row) => ({
+      service_id: row.service_id,
+      title: row.title,
+      description: row.description,
+      created_at: row.created_at,
+      package_count: parseInt(row.package_count),
+      min_price: parseFloat(row.min_price) || 0,
+      total_orders: parseInt(row.total_orders),
+      avg_rating: parseFloat(row.avg_rating).toFixed(1),
+      review_count: parseInt(row.review_count),
+      portfolio_image: row.portfolio_image,
+    }));
+
+    res.json({ services });
+  } catch (error) {
+    console.error("Error fetching my services:", error);
+    res.status(500).json({
+      error: "Failed to fetch services",
+      message: "An error occurred while fetching your services",
+    });
+  }
+};
+
+/**
+ * Update service (PATCH - partial update)
+ * Only the service owner can update
+ */
+export const updateService = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, packages, category_ids } = req.body;
+    const { decodeUserID } = await import("../utils/hashids.js");
+    const freelancer_id = decodeUserID(req.user.userID);
+
+    // Verify ownership
+    const ownershipCheck = await query(
+      "SELECT freelancer_id FROM service WHERE service_id = $1",
+      [id]
+    );
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(404).json({
+        error: "Service not found",
+        message: "The service you're trying to update doesn't exist",
+      });
+    }
+
+    console.log("DEBUG - Ownership check:");
+    console.log("  JWT userID (encoded):", req.user.userID);
+    console.log(
+      "  Decoded freelancer_id:",
+      freelancer_id,
+      typeof freelancer_id
+    );
+    console.log(
+      "  DB freelancer_id:",
+      ownershipCheck.rows[0].freelancer_id,
+      typeof ownershipCheck.rows[0].freelancer_id
+    );
+    console.log(
+      "  Match:",
+      parseInt(ownershipCheck.rows[0].freelancer_id) === parseInt(freelancer_id)
+    );
+
+    if (
+      parseInt(ownershipCheck.rows[0].freelancer_id) !== parseInt(freelancer_id)
+    ) {
+      return res.status(403).json({
+        error: "Unauthorized",
+        message: "You can only update your own services",
+      });
+    }
+
+    // Use transaction for atomic updates
+    const { tx } = await import("../db/tx.js");
+
+    await tx(async (client) => {
+      // Update service details if provided
+      if (title !== undefined || description !== undefined) {
+        const updates = [];
+        const values = [];
+        let paramCount = 0;
+
+        if (title !== undefined) {
+          paramCount++;
+          updates.push(`title = $${paramCount}`);
+          values.push(title);
+        }
+
+        if (description !== undefined) {
+          paramCount++;
+          updates.push(`description = $${paramCount}`);
+          values.push(description);
+        }
+
+        if (updates.length > 0) {
+          paramCount++;
+          values.push(id);
+
+          const updateQuery = `
+            UPDATE service 
+            SET ${updates.join(", ")}
+            WHERE service_id = $${paramCount}
+          `;
+
+          await client.query(updateQuery, values);
+        }
+      }
+
+      // Update packages if provided
+      if (packages && Array.isArray(packages)) {
+        for (const pkg of packages) {
+          if (!pkg.package_id) continue;
+
+          const pkgUpdates = [];
+          const pkgValues = [];
+          let pkgParamCount = 0;
+
+          if (pkg.name !== undefined) {
+            pkgParamCount++;
+            pkgUpdates.push(`name = $${pkgParamCount}`);
+            pkgValues.push(pkg.name);
+          }
+
+          if (pkg.price !== undefined) {
+            pkgParamCount++;
+            pkgUpdates.push(`price = $${pkgParamCount}`);
+            pkgValues.push(pkg.price);
+          }
+
+          if (pkg.delivery_time !== undefined) {
+            pkgParamCount++;
+            pkgUpdates.push(`delivery_time = $${pkgParamCount}`);
+            pkgValues.push(pkg.delivery_time);
+          }
+
+          if (pkg.description !== undefined) {
+            pkgParamCount++;
+            pkgUpdates.push(`description = $${pkgParamCount}`);
+            pkgValues.push(pkg.description);
+          }
+
+          if (pkgUpdates.length > 0) {
+            pkgParamCount++;
+            pkgValues.push(pkg.package_id);
+            pkgParamCount++;
+            pkgValues.push(id);
+
+            const pkgUpdateQuery = `
+              UPDATE package 
+              SET ${pkgUpdates.join(", ")}
+              WHERE package_id = $${
+                pkgParamCount - 1
+              } AND service_id = $${pkgParamCount}
+            `;
+
+            await client.query(pkgUpdateQuery, pkgValues);
+          }
+        }
+      }
+
+      // Update categories if provided
+      if (category_ids && Array.isArray(category_ids)) {
+        // Get all package IDs for this service
+        const packagesResult = await client.query(
+          "SELECT package_id FROM package WHERE service_id = $1",
+          [id]
+        );
+
+        const packageIds = packagesResult.rows.map((row) => row.package_id);
+
+        // Delete existing category associations for all packages
+        if (packageIds.length > 0) {
+          await client.query(
+            `DELETE FROM services_in_category 
+             WHERE package_id = ANY($1::int[])`,
+            [packageIds]
+          );
+
+          // Insert new category associations for each package
+          for (const packageId of packageIds) {
+            for (const categoryId of category_ids) {
+              await client.query(
+                `INSERT INTO services_in_category (package_id, category_id) 
+                 VALUES ($1, $2)
+                 ON CONFLICT DO NOTHING`,
+                [packageId, categoryId]
+              );
+            }
+          }
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      message: "Service updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating service:", error);
+    res.status(500).json({
+      error: "Failed to update service",
+      message: "An error occurred while updating the service",
+    });
+  }
+};
+
+/**
+ * Delete service
+ * Only the service owner can delete
+ * Cannot delete if service has active orders
+ */
+export const deleteService = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { decodeUserID } = await import("../utils/hashids.js");
+    const freelancer_id = decodeUserID(req.user.userID);
+
+    // Verify ownership
+    const ownershipCheck = await query(
+      "SELECT freelancer_id FROM service WHERE service_id = $1",
+      [id]
+    );
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(404).json({
+        error: "Service not found",
+        message: "The service you're trying to delete doesn't exist",
+      });
+    }
+
+    if (ownershipCheck.rows[0].freelancer_id !== freelancer_id) {
+      return res.status(403).json({
+        error: "Unauthorized",
+        message: "You can only delete your own services",
+      });
+    }
+
+    // Check for active orders
+    const activeOrdersCheck = await query(
+      `SELECT COUNT(*) as active_count 
+       FROM "order" o
+       JOIN package p ON o.package_id = p.package_id
+       WHERE p.service_id = $1 
+       AND o.status IN ('pending', 'in_progress', 'submitted')`,
+      [id]
+    );
+
+    if (parseInt(activeOrdersCheck.rows[0].active_count) > 0) {
+      return res.status(400).json({
+        error: "Cannot delete service",
+        message: "This service has active orders and cannot be deleted",
+      });
+    }
+
+    // Delete service (cascade will handle packages and portfolio images)
+    await query("DELETE FROM service WHERE service_id = $1", [id]);
+
+    res.json({
+      success: true,
+      message: "Service deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting service:", error);
+    res.status(500).json({
+      error: "Failed to delete service",
+      message: "An error occurred while deleting the service",
+    });
+  }
+};
+
+/**
+ * Delete a portfolio image
+ * Only the service owner can delete images
+ */
+export const deletePortfolioImage = async (req, res) => {
+  try {
+    const { id, imageId } = req.params;
+    const { decodeUserID } = await import("../utils/hashids.js");
+    const freelancer_id = decodeUserID(req.user.userID);
+
+    // Verify service ownership
+    const ownershipCheck = await query(
+      "SELECT freelancer_id FROM service WHERE service_id = $1",
+      [id]
+    );
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(404).json({
+        error: "Service not found",
+      });
+    }
+
+    if (
+      parseInt(ownershipCheck.rows[0].freelancer_id) !== parseInt(freelancer_id)
+    ) {
+      return res.status(403).json({
+        error: "Unauthorized",
+        message: "You can only delete images from your own services",
+      });
+    }
+
+    // Delete the image record
+    await query(
+      "DELETE FROM portfolio_image WHERE image_id = $1 AND service_id = $2",
+      [imageId, id]
+    );
+
+    res.json({
+      success: true,
+      message: "Image deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    res.status(500).json({
+      error: "Failed to delete image",
+    });
+  }
+};
+
+/**
+ * Add new portfolio images to a service
+ * Only the service owner can add images
+ */
+export const addPortfolioImages = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { decodeUserID } = await import("../utils/hashids.js");
+    const freelancer_id = decodeUserID(req.user.userID);
+
+    // Verify service ownership
+    const ownershipCheck = await query(
+      "SELECT freelancer_id FROM service WHERE service_id = $1",
+      [id]
+    );
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(404).json({
+        error: "Service not found",
+      });
+    }
+
+    if (
+      parseInt(ownershipCheck.rows[0].freelancer_id) !== parseInt(freelancer_id)
+    ) {
+      return res.status(403).json({
+        error: "Unauthorized",
+        message: "You can only add images to your own services",
+      });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        error: "No images provided",
+      });
+    }
+
+    // Get current max display order
+    const maxOrderResult = await query(
+      "SELECT COALESCE(MAX(display_order), -1) as max_order FROM portfolio_image WHERE service_id = $1",
+      [id]
+    );
+    let displayOrder = parseInt(maxOrderResult.rows[0].max_order) + 1;
+
+    // Insert new images
+    const imagePromises = req.files.map((file) => {
+      const filePath = `/uploads/portfolio/${file.filename}`;
+      return query(
+        "INSERT INTO portfolio_image (service_id, filename, file_path, display_order) VALUES ($1, $2, $3, $4) RETURNING image_id",
+        [id, file.filename, filePath, displayOrder++]
+      );
+    });
+
+    await Promise.all(imagePromises);
+
+    res.json({
+      success: true,
+      message: `${req.files.length} image(s) added successfully`,
+    });
+  } catch (error) {
+    console.error("Error adding images:", error);
+    res.status(500).json({
+      error: "Failed to add images",
     });
   }
 };

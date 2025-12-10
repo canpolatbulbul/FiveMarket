@@ -7,6 +7,7 @@ import "dotenv/config";
 import health from "./routers/health.js";
 import { authRouter } from "./routers/auth-router.js";
 import servicesRouter from "./routers/services-router.js";
+import categoriesRouter from "./routers/categories-router.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,10 +32,12 @@ app.use(
     credentials: true,
   })
 );
+// Serve uploaded images as static files
 app.use("/uploads", express.static(path.join("/app", "uploads")));
 
 app.use("/api/health", health);
 app.use("/api/auth", authRouter);
 app.use("/api/services", servicesRouter);
+app.use("/api/categories", categoriesRouter);
 
 export default app;

@@ -10,6 +10,8 @@ const HomePage = lazy(() => import("../pages/Home/HomePage.jsx"));
 const BrowsePage = lazy(() => import("../pages/Browse/BrowsePage.jsx"));
 const ServiceDetailPage = lazy(() => import("../pages/Service/ServiceDetailPage.jsx"));
 const AddServicePage = lazy(() => import("../pages/Service/AddServicePage.jsx"));
+const EditServicePage = lazy(() => import("../pages/Service/EditServicePage.jsx"));
+const MyServicesPage = lazy(() => import("../pages/Service/MyServicesPage.jsx"));
 const Register = lazy(() => import("../pages/Auth/Register.jsx"));
 const Login = lazy(() => import("../pages/Auth/Login.jsx"));
 const ForgotPassword = lazy(() => import("../pages/Auth/ForgotPassword.jsx"));
@@ -41,8 +43,16 @@ const AllRoutes = () => {
             element: <LoadComponent component={ServiceDetailPage} />
         },
         {
+            path: "/my-services",
+            element: <LoadComponent component={MyServicesPage} />
+        },
+        {
             path: "/services/create",
             element: <LoadComponent component={AddServicePage} />
+        },
+        {
+            path: "/services/edit/:id",
+            element: <LoadComponent component={EditServicePage} />
         },
         {
             path: "/auth",

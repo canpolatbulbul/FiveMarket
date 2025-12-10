@@ -7,9 +7,22 @@ import {
   getServiceById,
   searchServices,
   createService,
+  getMyServices,
+  updateService,
+  deleteService,
+  deletePortfolioImage,
+  addPortfolioImages,
 } from "../controllers/services-controller.js";
 
 const router = express.Router();
+
+// Get my services (freelancers only)
+router.get(
+  "/my-services",
+  checkAuth,
+  checkClearance("freelancer"),
+  getMyServices
+);
 
 // Create new service (freelancers only, with image upload)
 router.post(
@@ -19,6 +32,30 @@ router.post(
   upload.array("images", 5), // Max 5 images
   handleUploadError,
   createService
+);
+
+// Update service (freelancers only, PATCH for partial updates)
+router.patch("/:id", checkAuth, checkClearance("freelancer"), updateService);
+
+// Delete service (freelancers only)
+router.delete("/:id", checkAuth, checkClearance("freelancer"), deleteService);
+
+// Add portfolio images to service (freelancers only)
+router.post(
+  "/:id/images",
+  checkAuth,
+  checkClearance("freelancer"),
+  upload.array("images", 5),
+  handleUploadError,
+  addPortfolioImages
+);
+
+// Delete portfolio image (freelancers only)
+router.delete(
+  "/:id/images/:imageId",
+  checkAuth,
+  checkClearance("freelancer"),
+  deletePortfolioImage
 );
 
 // Search/browse services with filters and pagination (requires authentication)
