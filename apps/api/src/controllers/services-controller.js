@@ -122,13 +122,31 @@ export const getServiceById = async (req, res) => {
       GROUP BY f."userID"
     `;
 
-    const [serviceResult, packagesResult, reviewsResult, statsResult] =
-      await Promise.all([
-        query(serviceQuery, [id]),
-        query(packagesQuery, [id]),
-        query(reviewsQuery, [id]),
-        query(freelancerStatsQuery, [id]),
-      ]);
+    // Get portfolio images
+    const portfolioImagesQuery = `
+      SELECT 
+        image_id,
+        filename,
+        file_path,
+        display_order
+      FROM portfolio_image
+      WHERE service_id = $1
+      ORDER BY display_order ASC
+    `;
+
+    const [
+      serviceResult,
+      packagesResult,
+      reviewsResult,
+      statsResult,
+      imagesResult,
+    ] = await Promise.all([
+      query(serviceQuery, [id]),
+      query(packagesQuery, [id]),
+      query(reviewsQuery, [id]),
+      query(freelancerStatsQuery, [id]),
+      query(portfolioImagesQuery, [id]),
+    ]);
 
     if (serviceResult.rows.length === 0) {
       return res.status(404).json({
@@ -153,6 +171,12 @@ export const getServiceById = async (req, res) => {
       overall_rating: 0,
     };
 
+    const portfolio_images = imagesResult.rows.map((img) => ({
+      image_id: img.image_id,
+      url: img.file_path,
+      display_order: img.display_order,
+    }));
+
     res.json({
       service: {
         service_id: service.service_id,
@@ -168,6 +192,7 @@ export const getServiceById = async (req, res) => {
       },
       packages,
       reviews,
+      portfolio_images,
       freelancer_stats: {
         total_orders: parseInt(stats.total_orders),
         completed_orders: parseInt(stats.completed_orders),
@@ -382,6 +407,138 @@ export const searchServices = async (req, res) => {
     res.status(500).json({
       error: "Failed to search services",
       message: "An error occurred while searching for services",
+    });
+  }
+};
+
+/**
+ * Create a new service with packages and portfolio images
+ * Only accessible to freelancers
+ */
+export const createService = async (req, res) => {
+  try {
+    const { title, description, category_ids, packages } = req.body;
+
+    // Decode the hashid userID from JWT to get actual numeric ID
+    const { decodeUserID } = await import("../utils/hashids.js");
+    const freelancer_id = decodeUserID(req.user.userID);
+    const uploadedFiles = req.files || [];
+
+    // Debug logging
+    console.log("🔍 DEBUG - User from JWT:", {
+      userID: req.user.userID,
+      email: req.user.email,
+      freelancer_id: freelancer_id,
+    });
+    console.log("📁 DEBUG - Files received:", {
+      filesCount: uploadedFiles.length,
+      files: uploadedFiles.map((f) => ({
+        filename: f.filename,
+        size: f.size,
+        path: f.path,
+      })),
+    });
+
+    // Validate required fields
+    if (!title || !description || !packages || packages.length === 0) {
+      return res.status(400).json({
+        error: "Missing required fields",
+        message: "Title, description, and at least one package are required",
+      });
+    }
+
+    // Parse packages if it's a string (from FormData)
+    let parsedPackages = packages;
+    if (typeof packages === "string") {
+      try {
+        parsedPackages = JSON.parse(packages);
+      } catch (e) {
+        return res.status(400).json({
+          error: "Invalid packages format",
+          message: "Packages must be valid JSON",
+        });
+      }
+    }
+
+    // Parse category_ids if it's a string
+    let parsedCategoryIds = category_ids;
+    if (typeof category_ids === "string") {
+      try {
+        parsedCategoryIds = JSON.parse(category_ids);
+      } catch (e) {
+        return res.status(400).json({
+          error: "Invalid category_ids format",
+          message: "Category IDs must be valid JSON array",
+        });
+      }
+    }
+
+    // Use transaction helper
+    const { tx } = await import("../db/tx.js");
+    const service_id = await tx(async (client) => {
+      // Create service
+      const serviceResult = await client.query(
+        `INSERT INTO service (freelancer_id, title, description) 
+         VALUES ($1, $2, $3) 
+         RETURNING service_id`,
+        [freelancer_id, title, description]
+      );
+
+      const service_id = serviceResult.rows[0].service_id;
+
+      // Create packages
+      for (const pkg of parsedPackages) {
+        const packageResult = await client.query(
+          `INSERT INTO package (service_id, name, description, price, delivery_time) 
+           VALUES ($1, $2, $3, $4, $5) 
+           RETURNING package_id`,
+          [service_id, pkg.name, pkg.description, pkg.price, pkg.delivery_time]
+        );
+
+        const package_id = packageResult.rows[0].package_id;
+
+        // Link package to categories
+        if (parsedCategoryIds && parsedCategoryIds.length > 0) {
+          for (const category_id of parsedCategoryIds) {
+            await client.query(
+              `INSERT INTO services_in_category (package_id, category_id) 
+               VALUES ($1, $2)`,
+              [package_id, category_id]
+            );
+          }
+        }
+      }
+
+      // Save portfolio images
+      if (uploadedFiles.length > 0) {
+        for (let i = 0; i < uploadedFiles.length; i++) {
+          const file = uploadedFiles[i];
+          await client.query(
+            `INSERT INTO portfolio_image (service_id, filename, file_path, display_order) 
+             VALUES ($1, $2, $3, $4)`,
+            [
+              service_id,
+              file.filename,
+              `/uploads/portfolio/${file.filename}`,
+              i,
+            ]
+          );
+        }
+      }
+
+      return service_id;
+    });
+
+    res.status(201).json({
+      success: true,
+      service_id,
+      message: "Service created successfully",
+    });
+  } catch (error) {
+    console.error("Error creating service:", error);
+    res.status(500).json({
+      error: "Failed to create service",
+      message: error.message || "An error occurred while creating the service",
     });
   }
 };

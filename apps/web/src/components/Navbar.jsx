@@ -117,7 +117,7 @@ export default function Navbar() {
                 {/* Freelancer Create Service Button - Rightmost */}
                 {isFreelancer && (
                   <Link
-                    to="/create-service"
+                    to="/services/create"
                     className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-200"
                   >
                     Create Service

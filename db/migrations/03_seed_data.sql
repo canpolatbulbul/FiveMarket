@@ -31,13 +31,13 @@ TRUNCATE TABLE freelancer CASCADE;
 TRUNCATE TABLE client CASCADE;
 TRUNCATE TABLE "user" CASCADE;
 
--- Reset sequences
-ALTER SEQUENCE "user_userID_seq" RESTART WITH 1;
-ALTER SEQUENCE service_service_id_seq RESTART WITH 1;
-ALTER SEQUENCE package_package_id_seq RESTART WITH 1;
-ALTER SEQUENCE service_category_category_id_seq RESTART WITH 1;
-ALTER SEQUENCE order_order_id_seq RESTART WITH 1;
-ALTER SEQUENCE money_transaction_transaction_id_seq RESTART WITH 1;
+-- Reset sequences to start after seed data
+ALTER SEQUENCE "user_userID_seq" RESTART WITH 23;
+ALTER SEQUENCE service_service_id_seq RESTART WITH 17;
+ALTER SEQUENCE package_package_id_seq RESTART WITH 49;
+ALTER SEQUENCE service_category_category_id_seq RESTART WITH 11;
+ALTER SEQUENCE order_order_id_seq RESTART WITH 11;
+ALTER SEQUENCE money_transaction_transaction_id_seq RESTART WITH 5;
 ALTER SEQUENCE conversation_conversation_id_seq RESTART WITH 1;
 ALTER SEQUENCE revision_request_revision_id_seq RESTART WITH 1;
 ALTER SEQUENCE review_review_id_seq RESTART WITH 1;

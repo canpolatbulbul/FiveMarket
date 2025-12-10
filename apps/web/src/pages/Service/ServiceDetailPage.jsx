@@ -12,16 +12,10 @@ export default function ServiceDetailPage() {
   const [packages, setPackages] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [freelancerStats, setFreelancerStats] = useState(null);
+  const [portfolioImages, setPortfolioImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  // Placeholder images for the carousel (will be replaced with actual portfolio images)
-  const placeholderImages = [
-    { id: 1, alt: "Portfolio sample 1" },
-    { id: 2, alt: "Portfolio sample 2" },
-    { id: 3, alt: "Portfolio sample 3" },
-  ];
 
   useEffect(() => {
     fetchServiceDetails();
@@ -32,10 +26,16 @@ export default function ServiceDetailPage() {
     try {
       const api = new APICore();
       const response = await api.get(`/api/services/${id}`);
+      console.log("🖼️ DEBUG - API Response:", {
+        service_id: response.data.service?.service_id,
+        portfolio_images: response.data.portfolio_images,
+        portfolio_count: response.data.portfolio_images?.length || 0
+      });
       setService(response.data.service);
       setPackages(response.data.packages);
       setReviews(response.data.reviews);
       setFreelancerStats(response.data.freelancer_stats);
+      setPortfolioImages(response.data.portfolio_images || []);
       // Auto-select first package
       if (response.data.packages.length > 0) {
         setSelectedPackage(response.data.packages[0]);
@@ -56,11 +56,13 @@ export default function ServiceDetailPage() {
   };
 
   const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % placeholderImages.length);
+    const imageCount = portfolioImages.length > 0 ? portfolioImages.length : 1;
+    setCurrentImageIndex((prev) => (prev + 1) % imageCount);
   };
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + placeholderImages.length) % placeholderImages.length);
+    const imageCount = portfolioImages.length > 0 ? portfolioImages.length : 1;
+    setCurrentImageIndex((prev) => (prev - 1 + imageCount) % imageCount);
   };
 
   if (loading) {
@@ -139,43 +141,58 @@ export default function ServiceDetailPage() {
             {/* Portfolio/Image Gallery Carousel */}
             <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
               <div className="relative aspect-video bg-gradient-to-br from-slate-100 to-slate-200">
-                {/* Placeholder for portfolio images */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <ImageIcon className="h-24 w-24 text-slate-400 mx-auto mb-4" />
-                    <p className="text-slate-600 font-medium">Portfolio Gallery</p>
-                    <p className="text-sm text-slate-500">Images will be displayed here</p>
-                  </div>
-                </div>
-
-                {/* Carousel Controls */}
-                <button
-                  onClick={prevImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/90 hover:bg-white shadow-lg flex items-center justify-center transition-all"
-                >
-                  <ChevronLeft className="h-6 w-6 text-slate-700" />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/90 hover:bg-white shadow-lg flex items-center justify-center transition-all"
-                >
-                  <ChevronRight className="h-6 w-6 text-slate-700" />
-                </button>
-
-                {/* Image Indicators */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                  {placeholderImages.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentImageIndex(index)}
-                      className={`h-2 rounded-full transition-all ${
-                        index === currentImageIndex
-                          ? "w-8 bg-white"
-                          : "w-2 bg-white/50 hover:bg-white/75"
-                      }`}
+                {portfolioImages.length > 0 ? (
+                  <>
+                    {/* Actual Portfolio Images */}
+                    <img
+                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${portfolioImages[currentImageIndex].url}`}
+                      alt={`Portfolio image ${currentImageIndex + 1}`}
+                      className="absolute inset-0 w-full h-full object-cover"
                     />
-                  ))}
-                </div>
+                    
+                    {/* Carousel Controls */}
+                    {portfolioImages.length > 1 && (
+                      <>
+                        <button
+                          onClick={prevImage}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/90 hover:bg-white shadow-lg flex items-center justify-center transition-all"
+                        >
+                          <ChevronLeft className="h-6 w-6 text-slate-700" />
+                        </button>
+                        <button
+                          onClick={nextImage}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/90 hover:bg-white shadow-lg flex items-center justify-center transition-all"
+                        >
+                          <ChevronRight className="h-6 w-6 text-slate-700" />
+                        </button>
+
+                        {/* Image Indicators */}
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                          {portfolioImages.map((_, index) => (
+                            <button
+                              key={index}
+                              onClick={() => setCurrentImageIndex(index)}
+                              className={`h-2 rounded-full transition-all ${
+                                index === currentImageIndex
+                                  ? "w-8 bg-white"
+                                  : "w-2 bg-white/50 hover:bg-white/75"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  /* Placeholder when no images */
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <ImageIcon className="h-24 w-24 text-slate-400 mx-auto mb-4" />
+                      <p className="text-slate-600 font-medium">No Portfolio Images</p>
+                      <p className="text-sm text-slate-500">This service has no images yet</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
 

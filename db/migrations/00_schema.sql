@@ -400,3 +400,19 @@ DROP TRIGGER IF EXISTS trg_report_updated_at ON report;
 CREATE TRIGGER trg_report_updated_at
   BEFORE UPDATE ON report
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ============================================================================
+-- Portfolio Images
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS portfolio_image (
+  image_id BIGSERIAL PRIMARY KEY,
+  service_id INT NOT NULL REFERENCES service(service_id) ON DELETE CASCADE,
+  filename VARCHAR(255) NOT NULL,
+  file_path VARCHAR(500) NOT NULL,
+  display_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT unique_service_order UNIQUE(service_id, display_order)
+);
+
+CREATE INDEX IF NOT EXISTS idx_portfolio_service ON portfolio_image(service_id);
