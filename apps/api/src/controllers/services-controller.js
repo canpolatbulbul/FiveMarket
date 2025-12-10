@@ -838,7 +838,9 @@ export const deleteService = async (req, res) => {
       });
     }
 
-    if (ownershipCheck.rows[0].freelancer_id !== freelancer_id) {
+    if (
+      parseInt(ownershipCheck.rows[0].freelancer_id) !== parseInt(freelancer_id)
+    ) {
       return res.status(403).json({
         error: "Unauthorized",
         message: "You can only delete your own services",
