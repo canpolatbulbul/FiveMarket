@@ -861,7 +861,11 @@ export const deleteService = async (req, res) => {
 
     // Delete all portfolio image files from disk
     for (const image of imagesResult.rows) {
-      const actualFilePath = path.join(UPLOADS_BASE_DIR, image.file_path);
+      // Remove leading slash from file_path if present for proper path.join behavior
+      const relativePath = image.file_path.startsWith('/') 
+        ? image.file_path.substring(1) 
+        : image.file_path;
+      const actualFilePath = path.join(UPLOADS_BASE_DIR, relativePath);
       try {
         if (fs.existsSync(actualFilePath)) {
           fs.unlinkSync(actualFilePath);
@@ -938,8 +942,11 @@ export const deletePortfolioImage = async (req, res) => {
 
     // Delete the actual file from disk
     // file_path is stored as /uploads/portfolio/filename.jpg
-    // but actual path is /app/uploads/portfolio/filename.jpg
-    const actualFilePath = path.join(UPLOADS_BASE_DIR, filePath);
+    // Remove leading slash for proper path.join behavior
+    const relativePath = filePath.startsWith('/') 
+      ? filePath.substring(1) 
+      : filePath;
+    const actualFilePath = path.join(UPLOADS_BASE_DIR, relativePath);
     
     try {
       if (fs.existsSync(actualFilePath)) {
