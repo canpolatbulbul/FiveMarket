@@ -1,4 +1,6 @@
 import { query } from "../db/index.js";
+import fs from "fs";
+import path from "path";
 
 /**
  * Get featured/trending services
@@ -847,8 +849,27 @@ export const deleteService = async (req, res) => {
       });
     }
 
+    // Get all portfolio image file paths before deleting
+    const imagesResult = await query(
+      "SELECT file_path FROM portfolio_image WHERE service_id = $1",
+      [id]
+    );
+
     // Delete service (cascade will handle packages and portfolio images)
     await query("DELETE FROM service WHERE service_id = $1", [id]);
+
+    // Delete all portfolio image files from disk
+    for (const image of imagesResult.rows) {
+      const actualFilePath = path.join("/app", image.file_path);
+      try {
+        if (fs.existsSync(actualFilePath)) {
+          fs.unlinkSync(actualFilePath);
+        }
+      } catch (fileError) {
+        // Log error but don't fail the request since DB records are already deleted
+        console.error("Error deleting image file:", fileError);
+      }
+    }
 
     res.json({
       success: true,
@@ -894,11 +915,39 @@ export const deletePortfolioImage = async (req, res) => {
       });
     }
 
-    // Delete the image record
+    // Get the image file path before deleting from database
+    const imageResult = await query(
+      "SELECT file_path FROM portfolio_image WHERE image_id = $1 AND service_id = $2",
+      [imageId, id]
+    );
+
+    if (imageResult.rows.length === 0) {
+      return res.status(404).json({
+        error: "Image not found",
+      });
+    }
+
+    const filePath = imageResult.rows[0].file_path;
+
+    // Delete the image record from database
     await query(
       "DELETE FROM portfolio_image WHERE image_id = $1 AND service_id = $2",
       [imageId, id]
     );
+
+    // Delete the actual file from disk
+    // file_path is stored as /uploads/portfolio/filename.jpg
+    // but actual path is /app/uploads/portfolio/filename.jpg
+    const actualFilePath = path.join("/app", filePath);
+    
+    try {
+      if (fs.existsSync(actualFilePath)) {
+        fs.unlinkSync(actualFilePath);
+      }
+    } catch (fileError) {
+      // Log error but don't fail the request since DB record is already deleted
+      console.error("Error deleting image file:", fileError);
+    }
 
     res.json({
       success: true,
