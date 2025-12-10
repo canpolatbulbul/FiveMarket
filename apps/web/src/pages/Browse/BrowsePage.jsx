@@ -256,22 +256,37 @@ export default function BrowsePage() {
                       Previous
                     </button>
                     
-                    {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                      const pageNum = i + 1;
-                      return (
+                    {(() => {
+                      const totalPages = pagination.totalPages;
+                      const currentPage = parseInt(page);
+                      let startPage = Math.max(1, currentPage - 2);
+                      let endPage = Math.min(totalPages, currentPage + 2);
+                      // Adjust if we are near the start or end
+                      if (endPage - startPage < 4) {
+                        if (startPage === 1) {
+                          endPage = Math.min(totalPages, startPage + 4);
+                        } else if (endPage === totalPages) {
+                          startPage = Math.max(1, endPage - 4);
+                        }
+                      }
+                      const pageNumbers = [];
+                      for (let i = startPage; i <= endPage; i++) {
+                        pageNumbers.push(i);
+                      }
+                      return pageNumbers.map((pageNum) => (
                         <button
                           key={pageNum}
                           onClick={() => updateParams({ page: pageNum.toString() })}
                           className={`px-4 py-2 rounded-lg font-medium ${
-                            parseInt(page) === pageNum
+                            currentPage === pageNum
                               ? "bg-indigo-600 text-white"
                               : "border border-slate-300 hover:bg-slate-50"
                           }`}
                         >
                           {pageNum}
                         </button>
-                      );
-                    })}
+                      ));
+                    })()}
 
                     <button
                       onClick={() => updateParams({ page: (parseInt(page) + 1).toString() })}
