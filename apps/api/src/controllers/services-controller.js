@@ -13,7 +13,9 @@ async function deleteImageFile(filePath) {
   const relativePath = filePath.startsWith('/') 
     ? filePath.substring(1) 
     : filePath;
-  const actualFilePath = path.join(UPLOADS_BASE_DIR, relativePath);
+  
+  // Use path.normalize to handle any path inconsistencies and resolve to absolute path
+  const actualFilePath = path.normalize(path.join(UPLOADS_BASE_DIR, relativePath));
   
   try {
     await fs.unlink(actualFilePath);
