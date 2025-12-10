@@ -654,23 +654,6 @@ export const updateService = async (req, res) => {
       });
     }
 
-    console.log("DEBUG - Ownership check:");
-    console.log("  JWT userID (encoded):", req.user.userID);
-    console.log(
-      "  Decoded freelancer_id:",
-      freelancer_id,
-      typeof freelancer_id
-    );
-    console.log(
-      "  DB freelancer_id:",
-      ownershipCheck.rows[0].freelancer_id,
-      typeof ownershipCheck.rows[0].freelancer_id
-    );
-    console.log(
-      "  Match:",
-      parseInt(ownershipCheck.rows[0].freelancer_id) === parseInt(freelancer_id)
-    );
-
     if (
       parseInt(ownershipCheck.rows[0].freelancer_id) !== parseInt(freelancer_id)
     ) {
