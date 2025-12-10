@@ -10,6 +10,7 @@ export default function BrowsePage() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState(null);
+  const [categories, setCategories] = useState([{ category_id: "", description: "All Categories" }]);
 
   // Get params from URL
   const query = searchParams.get("q") || "";
@@ -20,6 +21,21 @@ export default function BrowsePage() {
   const delivery = searchParams.get("delivery") || "";
   const sort = searchParams.get("sort") || "popular";
   const page = searchParams.get("page") || "1";
+
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const api = new APICore();
+      const response = await api.get("/api/categories");
+      setCategories([{ category_id: "", description: "All Categories" }, ...(response.data.categories || [])]);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
 
   // Debounced fetch - wait 500ms after last param change
   useEffect(() => {
@@ -71,20 +87,6 @@ export default function BrowsePage() {
     }
     setSearchParams(newParams);
   };
-
-  const categories = [
-    { id: "", name: "All Categories" },
-    { id: "1", name: "Graphics & Design" },
-    { id: "2", name: "Digital Marketing" },
-    { id: "3", name: "Writing & Translation" },
-    { id: "4", name: "Video & Animation" },
-    { id: "5", name: "Programming & Tech" },
-    { id: "6", name: "Music & Audio" },
-    { id: "7", name: "Business" },
-    { id: "8", name: "AI Services" },
-    { id: "9", name: "Photography" },
-    { id: "10", name: "Lifestyle" },
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-purple-50 to-white">

@@ -26,11 +26,6 @@ export default function ServiceDetailPage() {
     try {
       const api = new APICore();
       const response = await api.get(`/api/services/${id}`);
-      console.log("🖼️ DEBUG - API Response:", {
-        service_id: response.data.service?.service_id,
-        portfolio_images: response.data.portfolio_images,
-        portfolio_count: response.data.portfolio_images?.length || 0
-      });
       setService(response.data.service);
       setPackages(response.data.packages);
       setReviews(response.data.reviews);

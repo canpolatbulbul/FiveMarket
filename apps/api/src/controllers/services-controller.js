@@ -451,21 +451,6 @@ export const createService = async (req, res) => {
     const freelancer_id = decodeUserID(req.user.userID);
     const uploadedFiles = req.files || [];
 
-    // Debug logging
-    console.log("🔍 DEBUG - User from JWT:", {
-      userID: req.user.userID,
-      email: req.user.email,
-      freelancer_id: freelancer_id,
-    });
-    console.log("📁 DEBUG - Files received:", {
-      filesCount: uploadedFiles.length,
-      files: uploadedFiles.map((f) => ({
-        filename: f.filename,
-        size: f.size,
-        path: f.path,
-      })),
-    });
-
     // Validate required fields
     if (!title || !description || !packages || packages.length === 0) {
       return res.status(400).json({
@@ -496,6 +481,63 @@ export const createService = async (req, res) => {
         return res.status(400).json({
           error: "Invalid category_ids format",
           message: "Category IDs must be valid JSON array",
+        });
+      }
+    }
+
+    // Validate and normalize packages
+    for (let i = 0; i < parsedPackages.length; i++) {
+      const pkg = parsedPackages[i];
+
+      // Normalize types (FormData sends strings)
+      pkg.price =
+        typeof pkg.price === "string" ? parseFloat(pkg.price) : pkg.price;
+      pkg.delivery_time =
+        typeof pkg.delivery_time === "string"
+          ? parseInt(pkg.delivery_time)
+          : pkg.delivery_time;
+
+      if (
+        !pkg.name ||
+        typeof pkg.name !== "string" ||
+        pkg.name.trim().length < 2
+      ) {
+        return res.status(400).json({
+          error: "Invalid package data",
+          message: `Package ${i + 1}: Name must be at least 2 characters`,
+        });
+      }
+
+      if (isNaN(pkg.price) || pkg.price <= 0) {
+        return res.status(400).json({
+          error: "Invalid package data",
+          message: `Package ${i + 1}: Price must be a positive number`,
+        });
+      }
+
+      if (
+        isNaN(pkg.delivery_time) ||
+        pkg.delivery_time <= 0 ||
+        !Number.isInteger(pkg.delivery_time)
+      ) {
+        return res.status(400).json({
+          error: "Invalid package data",
+          message: `Package ${i + 1}: Delivery time must be a positive integer`,
+        });
+      }
+    }
+
+    // Validate category IDs exist in database
+    if (parsedCategoryIds && parsedCategoryIds.length > 0) {
+      const categoryCheck = await query(
+        `SELECT category_id FROM service_category WHERE category_id = ANY($1::int[])`,
+        [parsedCategoryIds]
+      );
+
+      if (categoryCheck.rows.length !== parsedCategoryIds.length) {
+        return res.status(400).json({
+          error: "Invalid category IDs",
+          message: "One or more category IDs do not exist",
         });
       }
     }
@@ -835,8 +877,7 @@ export const deleteService = async (req, res) => {
       `SELECT COUNT(*) as active_count 
        FROM "order" o
        JOIN package p ON o.package_id = p.package_id
-       WHERE p.service_id = $1 
-       AND o.status IN ('pending', 'in_progress', 'submitted')`,
+       WHERE p.service_id = $1 AND o.status IN ('pending', 'in_progress')`,
       [id]
     );
 
@@ -847,8 +888,30 @@ export const deleteService = async (req, res) => {
       });
     }
 
-    // Delete service (cascade will handle packages and portfolio images)
+    // Get all portfolio image paths before deleting
+    const imagesResult = await query(
+      "SELECT file_path FROM portfolio_image WHERE service_id = $1",
+      [id]
+    );
+
+    // Delete service (cascade will handle packages and images in DB)
     await query("DELETE FROM service WHERE service_id = $1", [id]);
+
+    // Delete actual image files from disk
+    if (imagesResult.rows.length > 0) {
+      const fs = await import("fs/promises");
+      for (const row of imagesResult.rows) {
+        const filePath = row.file_path;
+        const fullPath = `/app${filePath}`; // /app/uploads/portfolio/filename.jpg
+
+        try {
+          await fs.unlink(fullPath);
+        } catch (fileError) {
+          console.error("Error deleting file:", fileError);
+          // Continue even if file deletion fails
+        }
+      }
+    }
 
     res.json({
       success: true,
@@ -894,11 +957,31 @@ export const deletePortfolioImage = async (req, res) => {
       });
     }
 
+    // Get image file path before deleting
+    const imageResult = await query(
+      "SELECT file_path FROM portfolio_image WHERE image_id = $1 AND service_id = $2",
+      [imageId, id]
+    );
+
     // Delete the image record
     await query(
       "DELETE FROM portfolio_image WHERE image_id = $1 AND service_id = $2",
       [imageId, id]
     );
+
+    // Delete the actual file from disk
+    if (imageResult.rows.length > 0) {
+      const filePath = imageResult.rows[0].file_path;
+      const fullPath = `/app${filePath}`; // /app/uploads/portfolio/filename.jpg
+
+      const fs = await import("fs/promises");
+      try {
+        await fs.unlink(fullPath);
+      } catch (fileError) {
+        console.error("Error deleting file:", fileError);
+        // Continue even if file deletion fails
+      }
+    }
 
     res.json({
       success: true,

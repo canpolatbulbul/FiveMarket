@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -19,6 +19,8 @@ export default function AddServicePage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -33,18 +35,34 @@ export default function AddServicePage() {
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
 
-  const categories = [
-    { id: "1", name: "Graphics & Design" },
-    { id: "2", name: "Digital Marketing" },
-    { id: "3", name: "Writing & Translation" },
-    { id: "4", name: "Video & Animation" },
-    { id: "5", name: "Programming & Tech" },
-    { id: "6", name: "Music & Audio" },
-    { id: "7", name: "Business" },
-    { id: "8", name: "AI Services" },
-    { id: "9", name: "Photography" },
-    { id: "10", name: "Lifestyle" },
-  ];
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach(url => {
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+  }, [imagePreviews]);
+
+  const fetchCategories = async () => {
+    try {
+      const api = new APICore();
+      const response = await api.get("/api/categories");
+      setCategories(response.data.categories || []);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      toast.error("Failed to load categories");
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
 
   const steps = [
     { name: "Service Details", description: "Basic information" },
@@ -62,6 +80,7 @@ export default function AddServicePage() {
       return;
     }
 
+    const validFiles = [];
     files.forEach((file) => {
       if (file.size > 5 * 1024 * 1024) {
         toast.error(`${file.name} is too large. Max 5MB per image.`);
@@ -73,8 +92,14 @@ export default function AddServicePage() {
         return;
       }
 
-      setImages((prev) => [...prev, file]);
+      validFiles.push(file);
+    });
 
+    if (validFiles.length === 0) return;
+
+    setImages((prev) => [...prev, ...validFiles]);
+
+    validFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreviews((prev) => [...prev, reader.result]);
@@ -84,6 +109,12 @@ export default function AddServicePage() {
   };
 
   const removeImage = (index) => {
+    // Revoke blob URL if it exists
+    const preview = imagePreviews[index];
+    if (preview && preview.startsWith('blob:')) {
+      URL.revokeObjectURL(preview);
+    }
+    
     setImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
@@ -311,20 +342,24 @@ export default function AddServicePage() {
                   Categories * (Select at least one)
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {categories.map((category) => (
-                    <button
-                      key={category.id}
-                      type="button"
-                      onClick={() => toggleCategory(category.id)}
-                      className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
-                        formData.category_ids.includes(category.id)
-                          ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                          : "border-slate-200 hover:border-indigo-300 text-slate-700"
-                      }`}
-                    >
-                      {category.name}
-                    </button>
-                  ))}
+                  {loadingCategories ? (
+                    <p className="text-sm text-slate-500">Loading categories...</p>
+                  ) : (
+                    categories.map((category) => (
+                      <button
+                        key={category.category_id}
+                        type="button"
+                        onClick={() => toggleCategory(category.category_id)}
+                        className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                          formData.category_ids.includes(category.category_id)
+                            ? "border-indigo-600 bg-indigo-50 text-indigo-700"
+                            : "border-slate-200 hover:border-indigo-300 text-slate-700"
+                        }`}
+                      >
+                        {category.description}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -486,7 +521,7 @@ export default function AddServicePage() {
                   <p className="text-sm text-slate-600"><strong>Title:</strong> {formData.title}</p>
                   <p className="text-sm text-slate-600 mt-1"><strong>Description:</strong> {formData.description.substring(0, 150)}...</p>
                   <p className="text-sm text-slate-600 mt-1">
-                    <strong>Categories:</strong> {formData.category_ids.map(id => categories.find(c => c.id === id)?.name).join(", ")}
+                    <strong>Categories:</strong> {formData.category_ids.map(id => categories.find(c => c.category_id === id)?.description).join(", ")}
                   </p>
                 </div>
 

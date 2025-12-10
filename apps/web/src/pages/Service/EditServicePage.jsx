@@ -21,10 +21,18 @@ export default function EditServicePage() {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [portfolioImages, setPortfolioImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
+  const [imageUrls, setImageUrls] = useState([]);
 
   useEffect(() => {
     fetchData();
   }, [id]);
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      imageUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [imageUrls]);
 
   const fetchData = async () => {
     try {
@@ -181,10 +189,19 @@ export default function EditServicePage() {
       toast.error("Maximum 5 images allowed");
       return;
     }
+    
+    // Create blob URLs and track them for cleanup
+    const newUrls = files.map(file => URL.createObjectURL(file));
+    setImageUrls(prev => [...prev, ...newUrls]);
     setNewImages(prev => [...prev, ...files]);
   };
 
   const removeNewImage = (index) => {
+    // Revoke the blob URL for the removed image
+    if (imageUrls[index]) {
+      URL.revokeObjectURL(imageUrls[index]);
+    }
+    setImageUrls(prev => prev.filter((_, i) => i !== index));
     setNewImages(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -419,7 +436,7 @@ export default function EditServicePage() {
                     {newImages.map((file, index) => (
                       <div key={index} className="relative group">
                         <img
-                          src={URL.createObjectURL(file)}
+                          src={imageUrls[index]}
                           alt="New"
                           className="w-full h-32 object-cover rounded-lg border border-slate-200"
                         />
