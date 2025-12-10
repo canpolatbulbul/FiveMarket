@@ -1,6 +1,7 @@
 import { query } from "../db/index.js";
 import fs from "fs";
 import path from "path";
+import { UPLOADS_BASE_DIR } from "../utils/config.js";
 
 /**
  * Get featured/trending services
@@ -860,7 +861,7 @@ export const deleteService = async (req, res) => {
 
     // Delete all portfolio image files from disk
     for (const image of imagesResult.rows) {
-      const actualFilePath = path.join("/app", image.file_path);
+      const actualFilePath = path.join(UPLOADS_BASE_DIR, image.file_path);
       try {
         if (fs.existsSync(actualFilePath)) {
           fs.unlinkSync(actualFilePath);
@@ -938,7 +939,7 @@ export const deletePortfolioImage = async (req, res) => {
     // Delete the actual file from disk
     // file_path is stored as /uploads/portfolio/filename.jpg
     // but actual path is /app/uploads/portfolio/filename.jpg
-    const actualFilePath = path.join("/app", filePath);
+    const actualFilePath = path.join(UPLOADS_BASE_DIR, filePath);
     
     try {
       if (fs.existsSync(actualFilePath)) {

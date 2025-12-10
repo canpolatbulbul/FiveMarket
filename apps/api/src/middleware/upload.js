@@ -2,12 +2,13 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { PORTFOLIO_UPLOAD_DIR } from "../utils/config.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure uploads directory exists - use /app/uploads to match volume mount
-const uploadDir = path.join("/app", "uploads", "portfolio");
+// Ensure uploads directory exists
+const uploadDir = PORTFOLIO_UPLOAD_DIR;
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
