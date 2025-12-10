@@ -1,5 +1,5 @@
 import { query } from "../db/index.js";
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import { UPLOADS_BASE_DIR } from "../utils/config.js";
 
@@ -859,22 +859,27 @@ export const deleteService = async (req, res) => {
     // Delete service (cascade will handle packages and portfolio images)
     await query("DELETE FROM service WHERE service_id = $1", [id]);
 
-    // Delete all portfolio image files from disk
-    for (const image of imagesResult.rows) {
+    // Delete all portfolio image files from disk concurrently
+    const deletePromises = imagesResult.rows.map(async (image) => {
       // Remove leading slash from file_path if present for proper path.join behavior
       const relativePath = image.file_path.startsWith('/') 
         ? image.file_path.substring(1) 
         : image.file_path;
       const actualFilePath = path.join(UPLOADS_BASE_DIR, relativePath);
+      
       try {
-        if (fs.existsSync(actualFilePath)) {
-          fs.unlinkSync(actualFilePath);
-        }
+        await fs.unlink(actualFilePath);
       } catch (fileError) {
         // Log error but don't fail the request since DB records are already deleted
-        console.error("Error deleting image file:", fileError);
+        // ENOENT errors are acceptable (file already doesn't exist)
+        if (fileError.code !== 'ENOENT') {
+          console.error("Error deleting image file:", fileError);
+        }
       }
-    }
+    });
+
+    // Wait for all file deletions to complete
+    await Promise.allSettled(deletePromises);
 
     res.json({
       success: true,
@@ -940,7 +945,7 @@ export const deletePortfolioImage = async (req, res) => {
       [imageId, id]
     );
 
-    // Delete the actual file from disk
+    // Delete the actual file from disk asynchronously
     // file_path is stored as /uploads/portfolio/filename.jpg
     // Remove leading slash for proper path.join behavior
     const relativePath = filePath.startsWith('/') 
@@ -949,12 +954,13 @@ export const deletePortfolioImage = async (req, res) => {
     const actualFilePath = path.join(UPLOADS_BASE_DIR, relativePath);
     
     try {
-      if (fs.existsSync(actualFilePath)) {
-        fs.unlinkSync(actualFilePath);
-      }
+      await fs.unlink(actualFilePath);
     } catch (fileError) {
       // Log error but don't fail the request since DB record is already deleted
-      console.error("Error deleting image file:", fileError);
+      // ENOENT errors are acceptable (file already doesn't exist)
+      if (fileError.code !== 'ENOENT') {
+        console.error("Error deleting image file:", fileError);
+      }
     }
 
     res.json({
