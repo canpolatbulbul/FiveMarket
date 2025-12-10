@@ -148,9 +148,11 @@ CREATE TABLE IF NOT EXISTS package (
   name VARCHAR(255) NOT NULL,
   description TEXT,
   price NUMERIC(10,2) NOT NULL,
+  delivery_time INT NOT NULL DEFAULT 3,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT price_non_negative CHECK (price >= 0),
+  CONSTRAINT delivery_time_positive CHECK (delivery_time > 0),
   CONSTRAINT unique_package_per_service UNIQUE (service_id, name)
 );
 

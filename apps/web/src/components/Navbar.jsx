@@ -19,7 +19,7 @@ export default function Navbar() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      navigate(`/browse?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery("");
       setMobileMenuOpen(false);
     }
