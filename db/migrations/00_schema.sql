@@ -290,15 +290,16 @@ CREATE TABLE IF NOT EXISTS revision_request (
   revision_id BIGSERIAL PRIMARY KEY,
   order_id BIGINT NOT NULL REFERENCES "order"(order_id) ON DELETE CASCADE,
   requested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  notes TEXT,
-  request_status VARCHAR(50) NOT NULL,
+  reason TEXT,
+  status VARCHAR(50) NOT NULL DEFAULT 'pending',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT request_status_values CHECK (request_status IN ('requested','accepted','rejected','fulfilled'))
+  resolved_at TIMESTAMPTZ,
+  CONSTRAINT revision_status_values CHECK (status IN ('pending','accepted','rejected','resolved'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_revision_request_order ON revision_request(order_id);
-CREATE INDEX IF NOT EXISTS idx_revision_request_status ON revision_request(request_status);
+CREATE INDEX IF NOT EXISTS idx_revision_request_status ON revision_request(status);
 
 DROP TRIGGER IF EXISTS trg_revision_request_updated_at ON revision_request;
 CREATE TRIGGER trg_revision_request_updated_at

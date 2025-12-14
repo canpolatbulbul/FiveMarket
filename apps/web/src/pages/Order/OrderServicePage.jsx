@@ -259,7 +259,7 @@ export default function OrderServicePage() {
                       <h3 className="font-semibold text-slate-900">{pkg.name}</h3>
                       <span className="text-lg font-bold text-indigo-600">${pkg.price}</span>
                     </div>
-                    <p className="text-sm text-slate-600 mb-3">{pkg.description}</p>
+                    <p className="text-sm text-slate-600 mb-3 break-words">{pkg.description}</p>
                     <div className="flex items-center gap-4 text-xs text-slate-500">
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />

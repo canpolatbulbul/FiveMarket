@@ -216,7 +216,29 @@ export const getOrderDetails = async (req, res) => {
           ))
           FROM transaction t
           WHERE t.order_id = o.order_id
-        ) as transactions
+        ) as transactions,
+        (
+          SELECT json_agg(json_build_object(
+            'deliverable_id', d.deliverable_id,
+            'file_path', d.file_path,
+            'file_name', d.file_name,
+            'file_size', d.file_size,
+            'uploaded_at', d.uploaded_at
+          ))
+          FROM deliverable d
+          WHERE d.order_id = o.order_id
+        ) as deliverables,
+        (
+          SELECT json_agg(json_build_object(
+            'revision_id', r.revision_id,
+            'reason', r.reason,
+            'status', r.status,
+            'requested_at', r.requested_at,
+            'resolved_at', r.resolved_at
+          ))
+          FROM revision_request r
+          WHERE r.order_id = o.order_id
+        ) as revision_requests
        FROM "order" o
        JOIN package p ON o.package_id = p.package_id
        JOIN service s ON p.service_id = s.service_id
@@ -373,6 +395,251 @@ export const updateOrderStatus = async (req, res) => {
 };
 
 /**
+ * Upload deliverable for an order
+ * @access Private (Freelancer only)
+ */
+export const uploadDeliverable = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { decodeUserID } = await import("../utils/hashids.js");
+    const user_id = decodeUserID(req.user.userID);
+
+    if (!req.file) {
+      return res.status(400).json({
+        error: "No file uploaded",
+        message: "Please select a file to upload",
+      });
+    }
+
+    // Get order and verify freelancer owns it
+    const orderResult = await query(
+      `SELECT o.*, s.freelancer_id
+       FROM "order" o
+       JOIN package p ON o.package_id = p.package_id
+       JOIN service s ON p.service_id = s.service_id
+       WHERE o.order_id = $1`,
+      [id]
+    );
+
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({
+        error: "Order not found",
+        message: "The requested order does not exist",
+      });
+    }
+
+    const order = orderResult.rows[0];
+    const freelancerId = parseInt(order.freelancer_id);
+    const userId = parseInt(user_id);
+
+    if (freelancerId !== userId) {
+      return res.status(403).json({
+        error: "Access denied",
+        message:
+          "You do not have permission to upload deliverables for this order",
+      });
+    }
+
+    // Insert deliverable record
+    const deliverableResult = await query(
+      `INSERT INTO deliverable (order_id, file_path, file_name, file_size)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [id, req.file.path, req.file.originalname, req.file.size]
+    );
+
+    // Update order status to delivered
+    await query(
+      `UPDATE "order" SET status = 'delivered', updated_at = NOW() WHERE order_id = $1`,
+      [id]
+    );
+
+    res.json({
+      success: true,
+      deliverable: deliverableResult.rows[0],
+      message: "Deliverable uploaded successfully",
+    });
+  } catch (error) {
+    console.error("Error uploading deliverable:", error);
+    res.status(500).json({
+      error: "Failed to upload deliverable",
+      message: error.message,
+    });
+  }
+};
+
+/**
+ * Complete an order (client accepts delivery)
+ * @access Private (Client only)
+ */
+export const completeOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { decodeUserID } = await import("../utils/hashids.js");
+    const user_id = decodeUserID(req.user.userID);
+
+    // Get order
+    const orderResult = await query(
+      `SELECT o.*, s.freelancer_id
+       FROM "order" o
+       JOIN package p ON o.package_id = p.package_id
+       JOIN service s ON p.service_id = s.service_id
+       WHERE o.order_id = $1`,
+      [id]
+    );
+
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({
+        error: "Order not found",
+        message: "The requested order does not exist",
+      });
+    }
+
+    const order = orderResult.rows[0];
+    const clientId = parseInt(order.client_id);
+    const userId = parseInt(user_id);
+
+    if (clientId !== userId) {
+      return res.status(403).json({
+        error: "Access denied",
+        message: "You do not have permission to complete this order",
+      });
+    }
+
+    if (order.status !== "delivered") {
+      return res.status(400).json({
+        error: "Invalid status",
+        message: "Order must be in 'delivered' status to be completed",
+      });
+    }
+
+    // Update order status
+    const result = await query(
+      `UPDATE "order" SET status = 'completed', updated_at = NOW() WHERE order_id = $1 RETURNING *`,
+      [id]
+    );
+
+    // Update transaction status to completed (release payment from escrow)
+    await query(
+      `UPDATE transaction 
+       SET status = 'completed', updated_at = NOW() 
+       WHERE order_id = $1`,
+      [id]
+    );
+
+    // Update freelancer earnings
+    await query(
+      `UPDATE freelancer 
+       SET total_earned = total_earned + $1 
+       WHERE "userID" = $2`,
+      [order.total_price, order.freelancer_id]
+    );
+
+    res.json({
+      success: true,
+      order: result.rows[0],
+      message: "Order completed successfully",
+    });
+  } catch (error) {
+    console.error("Error completing order:", error);
+    res.status(500).json({
+      error: "Failed to complete order",
+      message: error.message,
+    });
+  }
+};
+
+/**
+ * Request revision for an order
+ * @access Private (Client only)
+ */
+export const requestRevision = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const { decodeUserID } = await import("../utils/hashids.js");
+    const user_id = decodeUserID(req.user.userID);
+
+    if (!reason || reason.trim().length === 0) {
+      return res.status(400).json({
+        error: "Invalid request",
+        message: "Revision reason is required",
+      });
+    }
+
+    // Get order
+    const orderResult = await query(
+      `SELECT * FROM "order" WHERE order_id = $1`,
+      [id]
+    );
+
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({
+        error: "Order not found",
+        message: "The requested order does not exist",
+      });
+    }
+
+    const order = orderResult.rows[0];
+    const clientId = parseInt(order.client_id);
+    const userId = parseInt(user_id);
+
+    if (clientId !== userId) {
+      return res.status(403).json({
+        error: "Access denied",
+        message:
+          "You do not have permission to request revisions for this order",
+      });
+    }
+
+    if (order.status !== "delivered") {
+      return res.status(400).json({
+        error: "Invalid status",
+        message: "Order must be in 'delivered' status to request revision",
+      });
+    }
+
+    // Check if revisions are available
+    if (order.revisions_used >= order.revisions_allowed) {
+      return res.status(400).json({
+        error: "No revisions remaining",
+        message: "All revisions have been used for this order",
+      });
+    }
+
+    // Insert revision request
+    await query(
+      `INSERT INTO revision_request (order_id, reason, status)
+       VALUES ($1, $2, 'pending')`,
+      [id, reason.trim()]
+    );
+
+    // Update order
+    const result = await query(
+      `UPDATE "order" 
+       SET status = 'revision_requested', 
+           revisions_used = revisions_used + 1,
+           updated_at = NOW()
+       WHERE order_id = $1
+       RETURNING *`,
+      [id]
+    );
+
+    res.json({
+      success: true,
+      order: result.rows[0],
+      message: "Revision requested successfully",
+    });
+  } catch (error) {
+    console.error("Error requesting revision:", error);
+    res.status(500).json({
+      error: "Failed to request revision",
+      message: error.message,
+    });
+  }
+};
+
+/**
  * Create a new order
  * Requires authentication (client role)
  */
@@ -480,10 +747,10 @@ export const createOrder = async (req, res) => {
         );
       }
 
-      // Record transaction (payment)
+      // Record transaction (payment held in escrow)
       await client.query(
         `INSERT INTO transaction (order_id, amount, payment_method, card_last4, status)
-         VALUES ($1, $2, $3, $4, 'completed')`,
+         VALUES ($1, $2, $3, $4, 'pending')`,
         [order_id, total_price, payment_method || "card", card_last4 || null]
       );
 

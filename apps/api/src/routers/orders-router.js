@@ -5,10 +5,17 @@ import {
   getFreelancerOrders,
   getOrderDetails,
   updateOrderStatus,
+  uploadDeliverable,
+  completeOrder,
+  requestRevision,
 } from "../controllers/orders-controller.js";
 import checkAuth from "../middleware/auth-check.js";
 import checkClearance from "../middleware/clearance-check.js";
 import { ClearanceLevels } from "../utils/roles.js";
+import {
+  uploadDeliverable as uploadDeliverableMiddleware,
+  handleDeliverableUploadError,
+} from "../middleware/upload-deliverable.js";
 
 const router = express.Router();
 
@@ -49,6 +56,33 @@ router.get("/:id", checkAuth, getOrderDetails);
  * @access  Private (Client or Freelancer involved)
  */
 router.patch("/:id/status", checkAuth, updateOrderStatus);
+
+/**
+ * @route   POST /api/orders/:id/deliverable
+ * @desc    Upload deliverable for an order
+ * @access  Private (Freelancer only)
+ */
+router.post(
+  "/:id/deliverable",
+  checkAuth,
+  uploadDeliverableMiddleware.single("file"),
+  handleDeliverableUploadError,
+  uploadDeliverable
+);
+
+/**
+ * @route   PATCH /api/orders/:id/complete
+ * @desc    Complete an order (client accepts delivery)
+ * @access  Private (Client only)
+ */
+router.patch("/:id/complete", checkAuth, completeOrder);
+
+/**
+ * @route   POST /api/orders/:id/revision
+ * @desc    Request revision for an order
+ * @access  Private (Client only)
+ */
+router.post("/:id/revision", checkAuth, requestRevision);
 
 /**
  * @route   POST /api/orders

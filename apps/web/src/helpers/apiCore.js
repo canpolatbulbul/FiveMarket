@@ -47,6 +47,19 @@ axiosInstance.interceptors.response.use(
     if (error && error.response) {
       const { status, data } = error.response;
 
+      // Handle 401 Unauthorized - session expired
+      if (status === 401) {
+        // Clear all auth tokens
+        localStorage.removeItem(AUTH_SESSION_KEY);
+        sessionStorage.removeItem(AUTH_SESSION_KEY);
+        localStorage.removeItem("refreshToken");
+
+        // Redirect to login page
+        if (window.location.pathname !== "/auth/login") {
+          window.location.href = "/auth/login";
+        }
+      }
+
       // Priority: backend message > validation errors > default for status
       let message;
 
