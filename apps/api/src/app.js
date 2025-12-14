@@ -24,16 +24,20 @@ app.use(
 app.use(express.json());
 app.use(morgan("dev"));
 
-// Serve uploaded images as static files with explicit CORS
+// Serve uploaded images as static files with explicit CORS headers
 app.use(
   "/uploads",
-  cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
-    credentials: true,
-  })
+  (req, res, next) => {
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      process.env.CORS_ORIGIN || "http://localhost:5173"
+    );
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  },
+  express.static(path.join("/app", "uploads"))
 );
-// Serve uploaded images as static files
-app.use("/uploads", express.static(path.join("/app", "uploads")));
 
 app.use("/api/health", health);
 app.use("/api/auth", authRouter);

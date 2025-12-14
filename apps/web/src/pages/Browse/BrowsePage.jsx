@@ -118,15 +118,15 @@ export default function BrowsePage() {
                 <div className="space-y-2">
                   {categories.map((cat) => (
                     <button
-                      key={cat.id}
-                      onClick={() => updateParams({ category: cat.id })}
+                      key={cat.category_id}
+                      onClick={() => updateParams({ category: cat.category_id })}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                        category === cat.id
+                        category === cat.category_id.toString()
                           ? "bg-indigo-100 text-indigo-700 font-medium"
                           : "text-slate-700 hover:bg-slate-100"
                       }`}
                     >
-                      {cat.name}
+                      {cat.description}
                     </button>
                   ))}
                 </div>
@@ -333,6 +333,15 @@ function ServiceCard({ service }) {
           <img
             src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${service.portfolio_image}`}
             alt={service.title}
+            onError={(e) => {
+              // Hide broken image and show placeholder instead
+              e.target.style.display = 'none';
+              e.target.parentElement.innerHTML = `
+                <div class="absolute inset-0 flex items-center justify-center text-5xl">
+                  ${service.category_name?.[0] || "💼"}
+                </div>
+              `;
+            }}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
           />
         ) : (

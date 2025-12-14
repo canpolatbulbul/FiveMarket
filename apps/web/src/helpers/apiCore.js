@@ -23,6 +23,21 @@ axiosInstance.interceptors.request.use(
   }
 );
 
+// Helper function to get default error messages by status code
+const getDefaultErrorMessage = (status) => {
+  const defaults = {
+    400: "Invalid request. Please check your input.",
+    401: "Authentication required. Please log in.",
+    403: "You don't have permission to perform this action.",
+    404: "The requested resource was not found.",
+    409: "This resource already exists.",
+    500: "Server error. Please try again later.",
+    502: "Bad gateway. The server is temporarily unavailable.",
+    503: "Service unavailable. Please try again later.",
+  };
+  return defaults[status] || "An unexpected error occurred.";
+};
+
 // intercepting to capture errors
 axiosInstance.interceptors.response.use(
   (response) => {
@@ -31,32 +46,27 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error && error.response) {
       const { status, data } = error.response;
+
+      // Priority: backend message > validation errors > default for status
       let message;
-      switch (status) {
-        case 401:
-          message = "Invalid credentials, please check your email/password!";
-          break;
-        case 403:
-          message = "Access Forbidden";
-          break;
-        case 404:
-          message = "Sorry! The data you are looking for could not be found.";
-          break;
-        case 400:
-          // Handle validation errors with field-specific messages
-          if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
-            // Show first validation error message
-            message = data.errors[0].message || data.message || "Please check your input and try again.";
-          } else {
-            message = data?.message || "Please check your input and try again.";
-          }
-          break;
-        case 409:
-          message = data?.message || "An account with this email already exists. Please log in instead.";
-          break;
-        default:
-          message =
-            data?.message || error.message || "An unknown error occurred.";
+
+      // Check for validation errors array (e.g., from express-validator)
+      if (
+        data?.errors &&
+        Array.isArray(data.errors) &&
+        data.errors.length > 0
+      ) {
+        message = data.errors[0].message || data.errors[0].msg;
+      }
+
+      // Fall back to backend message or error field
+      if (!message) {
+        message = data?.message || data?.error;
+      }
+
+      // Final fallback to default message for status code
+      if (!message) {
+        message = getDefaultErrorMessage(status);
       }
 
       // Create a custom error object to propagate
@@ -67,12 +77,12 @@ axiosInstance.interceptors.response.use(
         originalError: error,
       };
 
-      return Promise.reject(customError); // Reject with the custom error
+      return Promise.reject(customError);
     }
 
-    // For cases where there's no response (e.g., network issues)
+    // Network or other errors without a response
     return Promise.reject({
-      message: error.message || "Network Error",
+      message: error.message || "Network error. Please check your connection.",
       originalError: error,
     });
   }
