@@ -83,7 +83,7 @@ export const getServiceById = async (req, res) => {
       FROM service s
       JOIN "user" u ON s.freelancer_id = u."userID"
       LEFT JOIN package p ON s.service_id = p.service_id
-      LEFT JOIN services_in_category sic ON p.package_id = sic.package_id
+      LEFT JOIN services_in_category sic ON s.service_id = sic.service_id
       LEFT JOIN service_category c ON sic.category_id = c.category_id
       LEFT JOIN "order" o ON p.package_id = o.package_id
       LEFT JOIN review r ON o.order_id = r.order_id
@@ -270,7 +270,7 @@ export const searchServices = async (req, res) => {
       paramCount++;
       conditions.push(`EXISTS (
         SELECT 1 FROM package p2 
-        JOIN services_in_category sic2 ON p2.package_id = sic2.package_id 
+        JOIN services_in_category sic2 ON s2.service_id = sic2.service_id 
         WHERE p2.service_id = s.service_id AND sic2.category_id = $${paramCount}
       )`);
       params.push(parseInt(category));
@@ -384,7 +384,7 @@ export const searchServices = async (req, res) => {
       JOIN service s ON s.service_id = service_stats.service_id
       JOIN "user" u ON s.freelancer_id = u."userID"
       LEFT JOIN package p ON s.service_id = p.service_id
-      LEFT JOIN services_in_category sic ON p.package_id = sic.package_id
+      LEFT JOIN services_in_category sic ON s.service_id = sic.service_id
       LEFT JOIN service_category c ON sic.category_id = c.category_id
       ${whereClause}
       GROUP BY s.service_id, s.title, s.description, s.freelancer_id, u.first_name, u.last_name, 
@@ -623,18 +623,16 @@ export const createService = async (req, res) => {
             pkg.revisions_allowed || 0,
           ]
         );
+      }
 
-        const package_id = packageResult.rows[0].package_id;
-
-        // Link package to categories
-        if (parsedCategoryIds && parsedCategoryIds.length > 0) {
-          for (const category_id of parsedCategoryIds) {
-            await client.query(
-              `INSERT INTO services_in_category (package_id, category_id) 
-               VALUES ($1, $2)`,
-              [package_id, category_id]
-            );
-          }
+      // Link service to categories (once per service, not per package)
+      if (parsedCategoryIds && parsedCategoryIds.length > 0) {
+        for (const category_id of parsedCategoryIds) {
+          await client.query(
+            `INSERT INTO services_in_category (service_id, category_id) 
+             VALUES ($1, $2)`,
+            [service_id, category_id]
+          );
         }
       }
 
@@ -880,25 +878,21 @@ export const updateService = async (req, res) => {
 
         const packageIds = packagesResult.rows.map((row) => row.package_id);
 
-        // Delete existing category associations for all packages
-        if (packageIds.length > 0) {
-          await client.query(
-            `DELETE FROM services_in_category 
-             WHERE package_id = ANY($1::int[])`,
-            [packageIds]
-          );
+        // Delete existing category associations for the service
+        await client.query(
+          `DELETE FROM services_in_category 
+           WHERE service_id = $1`,
+          [id]
+        );
 
-          // Insert new category associations for each package
-          for (const packageId of packageIds) {
-            for (const categoryId of category_ids) {
-              await client.query(
-                `INSERT INTO services_in_category (package_id, category_id) 
-                 VALUES ($1, $2)
-                 ON CONFLICT DO NOTHING`,
-                [packageId, categoryId]
-              );
-            }
-          }
+        // Insert new category associations for the service
+        for (const categoryId of category_ids) {
+          await client.query(
+            `INSERT INTO services_in_category (service_id, category_id) 
+             VALUES ($1, $2)
+             ON CONFLICT DO NOTHING`,
+            [id, categoryId]
+          );
         }
       }
     });

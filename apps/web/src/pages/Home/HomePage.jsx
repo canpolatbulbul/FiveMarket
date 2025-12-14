@@ -19,19 +19,9 @@ export default function HomePage() {
         const api = new APICore();
         
         if (user?.roles?.includes("admin")) {
-          // Fetch admin stats
-          const [usersRes, ordersRes, disputesRes] = await Promise.all([
-            api.get("/api/users/admin/all"),
-            api.get("/api/orders/admin/all"),
-            api.get("/api/disputes/admin/all"),
-          ]);
-          
-          setAdminStats({
-            totalUsers: usersRes.data.counts?.all || 0,
-            totalOrders: ordersRes.data.orders?.length || 0,
-            activeDisputes: disputesRes.data.disputes?.filter(d => d.status === 'open' || d.status === 'under_review').length || 0,
-            totalDisputes: disputesRes.data.disputes?.length || 0,
-          });
+          // Fetch comprehensive admin dashboard stats
+          const response = await api.get("/api/admin/dashboard/stats");
+          setAdminStats(response.data.stats);
         } else {
           // Fetch featured services for regular users
           const response = await api.get("/api/services/featured");
@@ -168,12 +158,10 @@ export default function HomePage() {
                     <div className="p-3 bg-purple-100 rounded-lg">
                       <Users className="h-6 w-6 text-purple-600" />
                     </div>
-                    <span className="text-2xl font-bold text-slate-900">{adminStats.totalUsers}</span>
+                    <span className="text-2xl font-bold text-slate-900">{adminStats.totals?.users || 0}</span>
                   </div>
                   <h3 className="text-sm font-medium text-slate-600">Total Users</h3>
-                  <Link to="/admin/users" className="text-sm text-indigo-600 hover:text-indigo-700 mt-2 inline-flex items-center gap-1">
-                    Manage <ArrowRight className="h-3 w-3" />
-                  </Link>
+                  <p className="text-xs text-slate-500 mt-1">+{adminStats.userGrowth?.newUsersThisMonth || 0} this month</p>
                 </div>
 
                 <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow">
@@ -181,12 +169,10 @@ export default function HomePage() {
                     <div className="p-3 bg-blue-100 rounded-lg">
                       <Package className="h-6 w-6 text-blue-600" />
                     </div>
-                    <span className="text-2xl font-bold text-slate-900">{adminStats.totalOrders}</span>
+                    <span className="text-2xl font-bold text-slate-900">{adminStats.totals?.orders || 0}</span>
                   </div>
                   <h3 className="text-sm font-medium text-slate-600">Total Orders</h3>
-                  <Link to="/admin/orders" className="text-sm text-indigo-600 hover:text-indigo-700 mt-2 inline-flex items-center gap-1">
-                    View All <ArrowRight className="h-3 w-3" />
-                  </Link>
+                  <p className="text-xs text-slate-500 mt-1">${adminStats.revenue?.completedRevenue?.toFixed(2) || 0} completed</p>
                 </div>
 
                 <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow">
@@ -194,7 +180,7 @@ export default function HomePage() {
                     <div className="p-3 bg-red-100 rounded-lg">
                       <AlertCircle className="h-6 w-6 text-red-600" />
                     </div>
-                    <span className="text-2xl font-bold text-slate-900">{adminStats.activeDisputes}</span>
+                    <span className="text-2xl font-bold text-slate-900">{adminStats.totals?.activeDisputes || 0}</span>
                   </div>
                   <h3 className="text-sm font-medium text-slate-600">Active Disputes</h3>
                   <Link to="/admin/disputes" className="text-sm text-indigo-600 hover:text-indigo-700 mt-2 inline-flex items-center gap-1">
@@ -207,12 +193,10 @@ export default function HomePage() {
                     <div className="p-3 bg-green-100 rounded-lg">
                       <ShoppingBag className="h-6 w-6 text-green-600" />
                     </div>
-                    <span className="text-2xl font-bold text-slate-900">{adminStats.totalDisputes}</span>
+                    <span className="text-2xl font-bold text-slate-900">${adminStats.revenue?.pendingRevenue?.toFixed(2) || 0}</span>
                   </div>
-                  <h3 className="text-sm font-medium text-slate-600">Total Disputes</h3>
-                  <Link to="/admin/disputes?filter=all" className="text-sm text-indigo-600 hover:text-indigo-700 mt-2 inline-flex items-center gap-1">
-                    View All <ArrowRight className="h-3 w-3" />
-                  </Link>
+                  <h3 className="text-sm font-medium text-slate-600">Pending Revenue</h3>
+                  <p className="text-xs text-slate-500 mt-1">{adminStats.revenue?.totalTransactions || 0} transactions</p>
                 </div>
               </div>
             )}
@@ -241,6 +225,98 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
+
+            {/* Statistics Sections */}
+            {!loading && adminStats && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                {/* Top Earners */}
+                <div className="bg-white rounded-xl border border-slate-200 p-6">
+                  <h3 className="text-xl font-bold text-slate-900 mb-4">🏆 Top Earners</h3>
+                  <div className="space-y-3">
+                    {adminStats.topEarners?.length > 0 ? (
+                      adminStats.topEarners.map((earner, index) => (
+                        <div key={earner.userID} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 font-bold text-sm">
+                              #{index + 1}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-900">{earner.name}</p>
+                              <p className="text-xs text-slate-500">{earner.totalOrders} orders</p>
+                            </div>
+                          </div>
+                          <span className="font-bold text-green-600">${earner.totalEarned.toFixed(2)}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-slate-500 text-center py-4">No earnings data yet</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Popular Categories */}
+                <div className="bg-white rounded-xl border border-slate-200 p-6">
+                  <h3 className="text-xl font-bold text-slate-900 mb-4">📊 Popular Categories</h3>
+                  <div className="space-y-3">
+                    {adminStats.popularCategories?.length > 0 ? (
+                      adminStats.popularCategories.map((category) => (
+                        <div key={category.categoryId} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                          <div>
+                            <p className="font-semibold text-slate-900">{category.name}</p>
+                            <p className="text-xs text-slate-500">{category.orderCount} orders</p>
+                          </div>
+                          <span className="font-bold text-indigo-600">${category.totalRevenue.toFixed(2)}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-slate-500 text-center py-4">No category data yet</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Recent Activity */}
+            {!loading && adminStats && adminStats.recentActivity?.length > 0 && (
+              <div className="bg-white rounded-xl border border-slate-200 p-6 mb-12">
+                <h3 className="text-xl font-bold text-slate-900 mb-4">⚡ Recent Activity</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Order</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Service</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Client → Freelancer</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {adminStats.recentActivity.map((activity) => (
+                        <tr key={activity.orderId} className="hover:bg-slate-50">
+                          <td className="px-4 py-3 text-sm font-medium text-slate-900">#{activity.orderId}</td>
+                          <td className="px-4 py-3 text-sm text-slate-600 max-w-xs truncate">{activity.serviceTitle}</td>
+                          <td className="px-4 py-3 text-sm text-slate-600">
+                            {activity.clientName} → {activity.freelancerName}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              activity.status === 'completed' ? 'bg-green-100 text-green-700' :
+                              activity.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                              activity.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-slate-100 text-slate-700'
+                            }`}>
+                              {activity.status.replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm font-bold text-slate-900 text-right">${activity.totalPrice.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <>

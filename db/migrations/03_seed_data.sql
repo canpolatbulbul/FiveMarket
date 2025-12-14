@@ -249,27 +249,24 @@ INSERT INTO package (package_id, service_id, name, description, price, delivery_
 -- Services in Categories
 -- ============================================================================
 
-INSERT INTO services_in_category (package_id, category_id) VALUES
--- Graphics & Design
-(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1),
+INSERT INTO services_in_category (service_id, category_id) VALUES
+-- Graphics & Design (Services 1-2)
+(1, 1), (2, 1),
 
--- Programming & Tech
-(7, 5), (8, 5), (9, 5), (10, 5), (11, 5), (12, 5),
-(31, 5), (32, 5), (33, 5), (34, 5), (35, 5), (36, 5),
+-- Programming & Tech (Services 3-4, 11-12)
+(3, 5), (4, 5), (11, 5), (12, 5),
 
--- Writing & Translation
-(13, 3), (14, 3), (15, 3), (16, 3), (17, 3), (18, 3),
-(43, 3), (44, 3), (45, 3),
+-- Writing & Translation (Services 5-6, 15)
+(5, 3), (6, 3), (15, 3),
 
--- Video & Animation
-(19, 4), (20, 4), (21, 4), (22, 4), (23, 4), (24, 4),
+-- Video & Animation (Services 7-8)
+(7, 4), (8, 4),
 
--- Digital Marketing
-(25, 2), (26, 2), (27, 2), (28, 2), (29, 2), (30, 2),
-(46, 2), (47, 2), (48, 2),
+-- Digital Marketing (Services 9-10, 16)
+(9, 2), (10, 2), (16, 2),
 
--- Music & Audio
-(37, 6), (38, 6), (39, 6), (40, 6), (41, 6), (42, 6);
+-- Music & Audio (Services 13-14)
+(13, 6), (14, 6);
 
 -- ============================================================================
 -- Orders

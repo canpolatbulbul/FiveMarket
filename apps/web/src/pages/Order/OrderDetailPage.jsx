@@ -22,8 +22,10 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function OrderDetailPage() {
+  const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -245,7 +247,8 @@ export default function OrderDetailPage() {
               <p className="text-slate-600">{order.service_title}</p>
             </div>
             <div className="flex items-center gap-3">
-              {order.conversation_id && (
+              {/* Only show messages to parties involved (not admins) */}
+              {order.conversation_id && !user?.roles?.includes('admin') && (
                 <button
                   onClick={() => navigate(`/messages/${order.conversation_id}`)}
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2"

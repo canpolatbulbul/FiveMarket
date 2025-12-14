@@ -176,12 +176,12 @@ CREATE TRIGGER trg_service_category_updated_at
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TABLE IF NOT EXISTS services_in_category (
-  package_id BIGINT NOT NULL REFERENCES package(package_id) ON DELETE CASCADE,
+  service_id BIGINT NOT NULL REFERENCES service(service_id) ON DELETE CASCADE,
   category_id BIGINT NOT NULL REFERENCES service_category(category_id) ON DELETE CASCADE,
-  PRIMARY KEY (package_id, category_id)
+  PRIMARY KEY (service_id, category_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_services_in_category_package ON services_in_category(package_id);
+CREATE INDEX IF NOT EXISTS idx_services_in_category_service ON services_in_category(service_id);
 CREATE INDEX IF NOT EXISTS idx_services_in_category_category ON services_in_category(category_id);
 
 -- ============================================================================
