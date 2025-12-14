@@ -93,14 +93,13 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/browse" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
-              Browse
-            </Link>
-
             {user ? (
               <>
                 {/* Common for logged-in users */}
-                <Link to="/orders" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                <Link to="/browse" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                  Browse
+                </Link>
+                <Link to="/my-orders" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
                   Orders
                 </Link>
                 <Link to="/messages" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
@@ -179,12 +178,12 @@ export default function Navbar() {
                               My Services
                             </Link>
                             <Link
-                              to="/earnings"
+                              to="/my-sales"
                               className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                               onClick={() => setUserMenuOpen(false)}
                             >
                               <DollarSign className="h-4 w-4" />
-                              Earnings
+                              My Sales
                             </Link>
                             <Link
                               to="/skill-tests"

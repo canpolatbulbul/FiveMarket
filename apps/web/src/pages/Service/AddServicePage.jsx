@@ -27,8 +27,9 @@ export default function AddServicePage() {
     description: "",
     category_ids: [],
     packages: [
-      { name: "Basic", description: "", price: "", delivery_time: "" }
+      { name: "Basic", description: "", price: "", delivery_time: "", revisions_allowed: "1" }
     ],
+    addons: [], // New: service add-ons
   });
 
   const [images, setImages] = useState([]);
@@ -66,6 +67,7 @@ export default function AddServicePage() {
   const steps = [
     { name: "Service Details", description: "Basic information" },
     { name: "Packages", description: "Pricing tiers" },
+    { name: "Add-ons", description: "Optional extras" },
     { name: "Portfolio", description: "Upload images" },
     { name: "Review", description: "Confirm & submit" },
   ];
@@ -148,6 +150,30 @@ export default function AddServicePage() {
     const newPackages = [...formData.packages];
     newPackages[index][field] = value;
     setFormData({ ...formData, packages: newPackages });
+  };
+
+  // Add-on management
+  const addAddon = () => {
+    setFormData({
+      ...formData,
+      addons: [
+        ...formData.addons,
+        { name: "", description: "", price: "", delivery_days: "0" },
+      ],
+    });
+  };
+
+  const removeAddon = (index) => {
+    setFormData({
+      ...formData,
+      addons: formData.addons.filter((_, i) => i !== index),
+    });
+  };
+
+  const updateAddon = (index, field, value) => {
+    const newAddons = [...formData.addons];
+    newAddons[index][field] = value;
+    setFormData({ ...formData, addons: newAddons });
   };
 
   // Category toggle
@@ -239,6 +265,7 @@ export default function AddServicePage() {
       formDataToSend.append("description", formData.description);
       formDataToSend.append("category_ids", JSON.stringify(formData.category_ids));
       formDataToSend.append("packages", JSON.stringify(formData.packages));
+      formDataToSend.append("addons", JSON.stringify(formData.addons));
 
       images.forEach((image) => {
         formDataToSend.append("images", image);
@@ -284,9 +311,9 @@ export default function AddServicePage() {
                   >
                     {index < currentStep ? <Check className="h-5 w-5" /> : index + 1}
                   </div>
-                  <div className="mt-2 text-center">
+                  <div className="mt-2 text-center min-h-[44px]">
                     <p className="text-sm font-medium text-slate-900">{step.name}</p>
-                    <p className="text-xs text-slate-500">{step.description}</p>
+                    <p className="text-xs text-slate-500 min-w-[108px]">{step.description}</p>
                   </div>
                 </div>
                 {index < steps.length - 1 && (
@@ -436,6 +463,20 @@ export default function AddServicePage() {
                       />
                     </div>
 
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Revisions Allowed *
+                      </label>
+                      <input
+                        type="number"
+                        value={pkg.revisions_allowed}
+                        onChange={(e) => updatePackage(index, "revisions_allowed", e.target.value)}
+                        placeholder="1"
+                        min="0"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-slate-700 mb-2">
                         Description *
@@ -454,8 +495,117 @@ export default function AddServicePage() {
             </div>
           )}
 
-          {/* Step 2: Portfolio Images */}
+          {/* Step 2: Add-ons (Optional Extras) */}
           {currentStep === 2 && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">Service Add-ons</h3>
+                <p className="text-sm text-slate-600 mb-4">
+                  Add optional extras that clients can purchase to customize their order (optional)
+                </p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  💡 <strong>Tip:</strong> Add-ons help increase your earnings! Examples: Extra fast delivery (+$20), source files (+$15), additional revisions (+$10), etc.
+                </p>
+              </div>
+
+              {/* Add-ons List */}
+              <div className="space-y-4">
+                {formData.addons.length === 0 ? (
+                  <div className="text-center py-8 border-2 border-dashed border-slate-300 rounded-lg">
+                    <p className="text-slate-500 mb-2">No add-ons yet</p>
+                    <p className="text-sm text-slate-400">Click "Add Add-on" below to create optional extras</p>
+                  </div>
+                ) : (
+                  formData.addons.map((addon, index) => (
+                    <div key={index} className="border border-slate-200 rounded-lg p-6 relative">
+                      <button
+                        onClick={() => removeAddon(index)}
+                        className="absolute top-4 right-4 text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+
+                      <h4 className="font-semibold text-slate-900 mb-4">Add-on {index + 1}</h4>
+
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Add-on Name *
+                          </label>
+                          <input
+                            type="text"
+                            value={addon.name}
+                            onChange={(e) => updateAddon(index, "name", e.target.value)}
+                            placeholder="e.g., Extra Fast Delivery"
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Price ($) *
+                          </label>
+                          <input
+                            type="number"
+                            value={addon.price}
+                            onChange={(e) => updateAddon(index, "price", e.target.value)}
+                            placeholder="20"
+                            min="0"
+                            step="0.01"
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Delivery Impact (days)
+                          </label>
+                          <input
+                            type="number"
+                            value={addon.delivery_days}
+                            onChange={(e) => updateAddon(index, "delivery_days", e.target.value)}
+                            placeholder="0"
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                          />
+                          <p className="text-xs text-slate-500 mt-1">
+                            Negative for faster delivery (e.g., -2 for rush), positive for extra time
+                          </p>
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Description
+                          </label>
+                          <textarea
+                            value={addon.description}
+                            onChange={(e) => updateAddon(index, "description", e.target.value)}
+                            placeholder="What does this add-on include?"
+                            rows={2}
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Add Add-on Button */}
+              <button
+                onClick={addAddon}
+                className="w-full py-3 border-2 border-dashed border-indigo-300 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus className="h-5 w-5" />
+                Add Add-on
+              </button>
+            </div>
+          )}
+
+          {/* Step 3: Portfolio Images */}
+          {currentStep === 3 && (
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-slate-900 mb-2">Portfolio Images</h3>
@@ -509,8 +659,8 @@ export default function AddServicePage() {
             </div>
           )}
 
-          {/* Step 3: Review */}
-          {currentStep === 3 && (
+          {/* Step 4: Review */}
+          {currentStep === 4 && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Review Your Service</h3>
 
@@ -531,6 +681,22 @@ export default function AddServicePage() {
                       <strong>{pkg.name}:</strong> ${pkg.price} - {pkg.delivery_time} days
                     </div>
                   ))}
+                </div>
+
+                <div className="border-b border-slate-200 pb-4">
+                  <h4 className="font-medium text-slate-900 mb-2">Add-ons ({formData.addons.length})</h4>
+                  {formData.addons.length > 0 ? (
+                    formData.addons.map((addon, index) => (
+                      <div key={index} className="text-sm text-slate-600 mt-2">
+                        <strong>{addon.name}:</strong> +${addon.price}
+                        {addon.delivery_days !== "0" && addon.delivery_days !== 0 && (
+                          <span> ({addon.delivery_days > 0 ? '+' : ''}{addon.delivery_days} days)</span>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-500">No add-ons configured</p>
+                  )}
                 </div>
 
                 <div>

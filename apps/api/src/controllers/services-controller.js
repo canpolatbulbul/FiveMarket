@@ -444,7 +444,7 @@ export const searchServices = async (req, res) => {
  */
 export const createService = async (req, res) => {
   try {
-    const { title, description, category_ids, packages } = req.body;
+    const { title, description, category_ids, packages, addons } = req.body;
 
     // Decode the hashid userID from JWT to get actual numeric ID
     const { decodeUserID } = await import("../utils/hashids.js");
@@ -542,6 +542,59 @@ export const createService = async (req, res) => {
       }
     }
 
+    // Parse add-ons if provided
+    let parsedAddons = [];
+    if (addons) {
+      if (typeof addons === "string") {
+        try {
+          parsedAddons = JSON.parse(addons);
+        } catch (e) {
+          return res.status(400).json({
+            error: "Invalid addons format",
+            message: "Add-ons must be valid JSON",
+          });
+        }
+      } else {
+        parsedAddons = addons;
+      }
+
+      // Validate add-ons
+      for (let i = 0; i < parsedAddons.length; i++) {
+        const addon = parsedAddons[i];
+
+        // Normalize types
+        addon.price =
+          typeof addon.price === "string"
+            ? parseFloat(addon.price)
+            : addon.price;
+        addon.delivery_days =
+          typeof addon.delivery_days === "string"
+            ? parseInt(addon.delivery_days)
+            : addon.delivery_days;
+
+        if (!addon.name || addon.name.trim().length < 2) {
+          return res.status(400).json({
+            error: "Invalid add-on data",
+            message: `Add-on ${i + 1}: Name must be at least 2 characters`,
+          });
+        }
+
+        if (isNaN(addon.price) || addon.price < 0) {
+          return res.status(400).json({
+            error: "Invalid add-on data",
+            message: `Add-on ${i + 1}: Price must be a non-negative number`,
+          });
+        }
+
+        if (isNaN(addon.delivery_days)) {
+          return res.status(400).json({
+            error: "Invalid add-on data",
+            message: `Add-on ${i + 1}: Delivery days must be a number`,
+          });
+        }
+      }
+    }
+
     // Use transaction helper
     const { tx } = await import("../db/tx.js");
     const service_id = await tx(async (client) => {
@@ -558,10 +611,17 @@ export const createService = async (req, res) => {
       // Create packages
       for (const pkg of parsedPackages) {
         const packageResult = await client.query(
-          `INSERT INTO package (service_id, name, description, price, delivery_time) 
-           VALUES ($1, $2, $3, $4, $5) 
+          `INSERT INTO package (service_id, name, description, price, delivery_time, revisions_allowed) 
+           VALUES ($1, $2, $3, $4, $5, $6) 
            RETURNING package_id`,
-          [service_id, pkg.name, pkg.description, pkg.price, pkg.delivery_time]
+          [
+            service_id,
+            pkg.name,
+            pkg.description,
+            pkg.price,
+            pkg.delivery_time,
+            pkg.revisions_allowed || 0,
+          ]
         );
 
         const package_id = packageResult.rows[0].package_id;
@@ -575,6 +635,23 @@ export const createService = async (req, res) => {
               [package_id, category_id]
             );
           }
+        }
+      }
+
+      // Create add-ons
+      if (parsedAddons && parsedAddons.length > 0) {
+        for (const addon of parsedAddons) {
+          await client.query(
+            `INSERT INTO service_addon (service_id, name, description, price, delivery_days) 
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+              service_id,
+              addon.name,
+              addon.description || null,
+              addon.price,
+              addon.delivery_days,
+            ]
+          );
         }
       }
 

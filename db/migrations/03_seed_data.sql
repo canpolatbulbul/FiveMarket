@@ -427,6 +427,60 @@ INSERT INTO report (report_id, admin_id, generation_time, parameter, report_type
 (3, 21, NOW() - INTERVAL '3 days', 'top_services', 'Service Performance');
 
 -- ============================================================================
+-- Service Add-ons
+-- ============================================================================
+
+-- Logo Design Service (service_id = 1)
+INSERT INTO service_addon (service_id, name, description, price, delivery_days) VALUES
+(1, 'Extra Fast Delivery', 'Get your logo in 1 day instead of 3', 20.00, -2),
+(1, 'Source Files', 'Receive AI, PSD, and vector source files', 15.00, 0),
+(1, 'Additional Revision', 'Get 1 extra revision beyond package limit', 10.00, 0),
+(1, 'Social Media Kit', 'Logo optimized for all social media platforms', 30.00, 1),
+(1, 'Commercial License', 'Full commercial usage rights', 50.00, 0),
+(1, '3D Mockup', '3D visualization of your logo', 25.00, 2);
+
+-- Minimalist Logo Service (service_id = 2)
+INSERT INTO service_addon (service_id, name, description, price, delivery_days) VALUES
+(2, 'Rush Delivery', 'Deliver in 24 hours', 30.00, -2),
+(2, 'Brand Style Guide', 'Complete brand guidelines document', 40.00, 2),
+(2, 'Business Card Design', 'Matching business card design', 35.00, 1),
+(2, 'Letterhead Design', 'Professional letterhead template', 25.00, 1),
+(2, 'Source Files Package', 'All editable source files', 20.00, 0);
+
+-- Web Development Service (service_id = 3)
+INSERT INTO service_addon (service_id, name, description, price, delivery_days) VALUES
+(3, 'Extra Page', 'Add one additional page to your website', 50.00, 1),
+(3, 'SEO Optimization', 'Complete on-page SEO setup', 100.00, 2),
+(3, 'Contact Form Integration', 'Working contact form with email notifications', 40.00, 1),
+(3, 'Google Analytics Setup', 'Analytics tracking and dashboard setup', 30.00, 0),
+(3, 'Priority Support', '24-hour response time for 30 days', 50.00, 0),
+(3, 'Performance Optimization', 'Speed optimization and caching setup', 75.00, 2),
+(3, 'SSL Certificate Setup', 'HTTPS security configuration', 25.00, 0);
+
+-- WordPress Service (service_id = 4)
+INSERT INTO service_addon (service_id, name, description, price, delivery_days) VALUES
+(4, 'E-commerce Integration', 'WooCommerce shop setup', 150.00, 3),
+(4, 'Custom Plugin Development', 'One custom WordPress plugin', 200.00, 5),
+(4, 'Backup & Security Setup', 'Automated backups and security hardening', 60.00, 1),
+(4, 'Speed Optimization', 'Caching and performance tuning', 80.00, 2),
+(4, 'Content Migration', 'Migrate content from old website', 100.00, 2);
+
+-- SEO Writing Service (service_id = 5)
+INSERT INTO service_addon (service_id, name, description, price, delivery_days) VALUES
+(5, 'Extra 500 Words', 'Extend article by 500 words', 15.00, 0),
+(5, 'Keyword Research', 'Professional keyword research and strategy', 20.00, 1),
+(5, 'Meta Description', 'SEO-optimized meta description', 5.00, 0),
+(5, 'Image Sourcing', 'Find and include 3 relevant images', 15.00, 0),
+(5, 'Same Day Delivery', 'Deliver within 24 hours', 25.00, -1),
+(5, 'Proofreading', 'Professional proofreading and editing', 10.00, 0);
+
+-- Update existing packages to have revisions_allowed
+UPDATE package SET revisions_allowed = 1 WHERE name = 'Basic';
+UPDATE package SET revisions_allowed = 2 WHERE name = 'Standard';
+UPDATE package SET revisions_allowed = 3 WHERE name = 'Premium';
+UPDATE package SET revisions_allowed = 5 WHERE name = 'Ultimate';
+
+-- ============================================================================
 -- Verification
 -- ============================================================================
 
@@ -436,3 +490,5 @@ SELECT COUNT(*) as total_services FROM service;
 SELECT COUNT(*) as total_packages FROM package;
 SELECT COUNT(*) as total_orders FROM "order";
 SELECT COUNT(*) as total_reviews FROM review;
+SELECT COUNT(*) as total_addons FROM service_addon;
+

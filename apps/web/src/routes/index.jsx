@@ -12,6 +12,12 @@ const ServiceDetailPage = lazy(() => import("../pages/Service/ServiceDetailPage.
 const AddServicePage = lazy(() => import("../pages/Service/AddServicePage.jsx"));
 const EditServicePage = lazy(() => import("../pages/Service/EditServicePage.jsx"));
 const MyServicesPage = lazy(() => import("../pages/Service/MyServicesPage.jsx"));
+const OrderServicePage = lazy(() => import("../pages/Order/OrderServicePage.jsx"));
+const ClientOrdersPage = lazy(() => import("../pages/Order/ClientOrdersPage.jsx"));
+const FreelancerOrdersPage = lazy(() => import("../pages/Order/FreelancerOrdersPage.jsx"));
+const OrderDetailPage = lazy(() => import("../pages/Order/OrderDetailPage.jsx"));
+const MessagesPage = lazy(() => import("../pages/Messages/MessagesPage.jsx"));
+const ConversationPage = lazy(() => import("../pages/Messages/ConversationPage.jsx"));
 const Register = lazy(() => import("../pages/Auth/Register.jsx"));
 const Login = lazy(() => import("../pages/Auth/Login.jsx"));
 const ForgotPassword = lazy(() => import("../pages/Auth/ForgotPassword.jsx"));
@@ -19,6 +25,7 @@ const ResetPassword = lazy(() => import("../pages/Auth/ResetPassword.jsx"));
 const TermsAndConditions = lazy(() => import("../pages/Legal/TermsAndConditions.jsx"));
 const PrivacyPolicy = lazy(() => import("../pages/Legal/PrivacyPolicy.jsx"));
 const Logout = lazy(() => import("../pages/Auth/Logout.jsx"));
+const ForbiddenPage = lazy(() => import("../pages/Error/ForbiddenPage.jsx"));
 
 const LoadComponent = ({component: Component}) => (
     <Suspense fallback={<LoadingSpinner fullScreen />}>
@@ -36,23 +43,47 @@ const AllRoutes = () => {
         },
         {
             path: "/browse",
-            element: <LoadComponent component={BrowsePage} />
+            element: <ProtectedRoute><LoadComponent component={BrowsePage} /></ProtectedRoute>
         },
         {
             path: "/service/:id",
-            element: <LoadComponent component={ServiceDetailPage} />
+            element: <ProtectedRoute><LoadComponent component={ServiceDetailPage} /></ProtectedRoute>
+        },
+        {
+            path: "/service/:serviceId/order",
+            element: <ProtectedRoute><LoadComponent component={OrderServicePage} /></ProtectedRoute>
+        },
+        {
+            path: "/my-orders",
+            element: <ProtectedRoute requiredRole={Roles.CLIENT}><LoadComponent component={ClientOrdersPage} /></ProtectedRoute>
+        },
+        {
+            path: "/my-sales",
+            element: <ProtectedRoute requiredRole={Roles.FREELANCER}><LoadComponent component={FreelancerOrdersPage} /></ProtectedRoute>
+        },
+        {
+            path: "/orders/:id",
+            element: <ProtectedRoute><LoadComponent component={OrderDetailPage} /></ProtectedRoute>
+        },
+        {
+            path: "/messages",
+            element: <ProtectedRoute><LoadComponent component={MessagesPage} /></ProtectedRoute>
+        },
+        {
+            path: "/messages/:id",
+            element: <ProtectedRoute><LoadComponent component={ConversationPage} /></ProtectedRoute>
         },
         {
             path: "/my-services",
-            element: <LoadComponent component={MyServicesPage} />
+            element: <ProtectedRoute><LoadComponent component={MyServicesPage} /></ProtectedRoute>
         },
         {
             path: "/services/create",
-            element: <LoadComponent component={AddServicePage} />
+            element: <ProtectedRoute><LoadComponent component={AddServicePage} /></ProtectedRoute>
         },
         {
             path: "/services/edit/:id",
-            element: <LoadComponent component={EditServicePage} />
+            element: <ProtectedRoute><LoadComponent component={EditServicePage} /></ProtectedRoute>
         },
         {
             path: "/auth",
@@ -61,7 +92,7 @@ const AllRoutes = () => {
                 {path:"login",element: <LoadComponent component={Login} />},
                 {path:"forgot-password",element: <LoadComponent component={ForgotPassword} />},
                 {path:"reset-password",element: <LoadComponent component={ResetPassword} />},
-                {path:"logout",element: <LoadComponent component={Logout} />}
+                {path:"logout",element: <ProtectedRoute><LoadComponent component={Logout} /></ProtectedRoute>}
             ]
         },
         {
@@ -70,6 +101,10 @@ const AllRoutes = () => {
                 {path:"terms",element: <LoadComponent component={TermsAndConditions} />},
                 {path:"privacy",element: <LoadComponent component={PrivacyPolicy} />}
             ]
+        },
+        {
+            path: "/forbidden",
+            element: <LoadComponent component={ForbiddenPage} />
         },
         {
             path: "*",

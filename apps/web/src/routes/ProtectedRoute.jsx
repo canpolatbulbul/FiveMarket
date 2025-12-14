@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { getClearanceLevel, hasClearance } from '../helpers/roles.js';
+import { hasClearance } from '../helpers/roles.js';
 import { useAuth } from "@/contexts/AuthContext.jsx";
 
 /**
@@ -17,18 +17,21 @@ const ProtectedRoute = ({ children, requiredClearance, requiredRole }) => {
         return <Navigate to="/auth/login" />;
     }
 
-    // If specific role is required, check exact match
+    // If specific role is required, check if user has that role in their roles array
     if (requiredRole) {
-        if (user.role?.toLowerCase() !== requiredRole.toLowerCase()) {
+        const hasAccess = user.roles?.some(
+            role => role.toLowerCase() === requiredRole.toLowerCase()
+        );
+        
+        if (!hasAccess) {
             return <Navigate to="/forbidden" />;
         }
         return children;
     }
 
-    // Otherwise check clearance level
+    // Otherwise check clearance level using the clearance value from backend
     if (requiredClearance) {
-        const userClearance = getClearanceLevel(user.role);
-        if (!hasClearance(userClearance, requiredClearance)) {
+        if (!hasClearance(user.clearance, requiredClearance)) {
             return <Navigate to="/forbidden" />;
         }
     }

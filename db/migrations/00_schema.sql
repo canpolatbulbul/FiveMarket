@@ -416,3 +416,178 @@ CREATE TABLE IF NOT EXISTS portfolio_image (
 );
 
 CREATE INDEX IF NOT EXISTS idx_portfolio_service ON portfolio_image(service_id);
+
+-- ============================================================================
+-- Authentication & Security Tables
+-- ============================================================================
+
+-- Password Reset Tokens
+CREATE TABLE IF NOT EXISTS password_reset_token (
+  token_id BIGSERIAL PRIMARY KEY,
+  "userID" BIGINT NOT NULL REFERENCES "user"("userID") ON DELETE CASCADE,
+  token VARCHAR(255) NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT token_not_expired CHECK (expires_at > created_at)
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_reset_token_user ON password_reset_token("userID");
+CREATE INDEX IF NOT EXISTS idx_password_reset_token_token ON password_reset_token(token);
+CREATE INDEX IF NOT EXISTS idx_password_reset_token_expires ON password_reset_token(expires_at);
+
+-- Refresh Tokens (for "Remember Me" functionality)
+CREATE TABLE IF NOT EXISTS refresh_token (
+  token_id BIGSERIAL PRIMARY KEY,
+  "userID" BIGINT NOT NULL REFERENCES "user"("userID") ON DELETE CASCADE,
+  token VARCHAR(255) NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_used_at TIMESTAMPTZ,
+  user_agent TEXT,
+  ip_address VARCHAR(45),
+  CONSTRAINT token_not_expired CHECK (expires_at > created_at)
+);
+
+CREATE INDEX IF NOT EXISTS idx_refresh_token_user ON refresh_token("userID");
+CREATE INDEX IF NOT EXISTS idx_refresh_token_token ON refresh_token(token);
+CREATE INDEX IF NOT EXISTS idx_refresh_token_expires ON refresh_token(expires_at);
+
+-- ============================================================================
+-- Order System Enhancements
+-- ============================================================================
+
+-- Service Add-ons (optional extras for services)
+CREATE TABLE IF NOT EXISTS service_addon (
+  addon_id BIGSERIAL PRIMARY KEY,
+  service_id BIGINT NOT NULL REFERENCES service(service_id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  price NUMERIC(10,2) NOT NULL,
+  delivery_days INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT addon_price_non_negative CHECK (price >= 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_service_addon_service ON service_addon(service_id);
+
+DROP TRIGGER IF EXISTS trg_service_addon_updated_at ON service_addon;
+CREATE TRIGGER trg_service_addon_updated_at
+  BEFORE UPDATE ON service_addon
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+COMMENT ON TABLE service_addon IS 'Optional extras that can be added to a service (e.g., extra fast delivery, source files)';
+COMMENT ON COLUMN service_addon.delivery_days IS 'Additional days added to delivery time (can be negative for rush delivery)';
+
+-- Order Add-ons (selected extras for an order)
+CREATE TABLE IF NOT EXISTS order_addon (
+  order_id BIGINT NOT NULL REFERENCES "order"(order_id) ON DELETE CASCADE,
+  addon_id BIGINT NOT NULL REFERENCES service_addon(addon_id) ON DELETE RESTRICT,
+  quantity INT NOT NULL DEFAULT 1,
+  price_at_purchase NUMERIC(10,2) NOT NULL,
+  PRIMARY KEY (order_id, addon_id),
+  CONSTRAINT quantity_positive CHECK (quantity > 0),
+  CONSTRAINT price_non_negative CHECK (price_at_purchase >= 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_order_addon_order ON order_addon(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_addon_addon ON order_addon(addon_id);
+
+COMMENT ON TABLE order_addon IS 'Add-ons selected by client when placing an order';
+COMMENT ON COLUMN order_addon.price_at_purchase IS 'Price of addon at time of purchase (for historical accuracy)';
+
+-- Revision Requests (update existing table)
+DO $$ 
+BEGIN
+  -- Rename 'notes' to 'reason' if it exists
+  IF EXISTS (SELECT 1 FROM information_schema.columns 
+             WHERE table_name='revision_request' AND column_name='notes') THEN
+    ALTER TABLE revision_request RENAME COLUMN notes TO reason;
+  END IF;
+  
+  -- Rename 'request_status' to 'status' if it exists
+  IF EXISTS (SELECT 1 FROM information_schema.columns 
+             WHERE table_name='revision_request' AND column_name='request_status') THEN
+    ALTER TABLE revision_request RENAME COLUMN request_status TO status;
+  END IF;
+END $$;
+
+ALTER TABLE revision_request ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ;
+
+DO $$
+BEGIN
+  ALTER TABLE revision_request ALTER COLUMN reason SET NOT NULL;
+EXCEPTION
+  WHEN others THEN NULL;
+END $$;
+
+ALTER TABLE revision_request DROP CONSTRAINT IF EXISTS request_status_values;
+ALTER TABLE revision_request DROP CONSTRAINT IF EXISTS revision_status_values;
+
+UPDATE revision_request SET status = 'completed' WHERE status = 'fulfilled';
+UPDATE revision_request SET status = 'in_progress' WHERE status = 'accepted';
+UPDATE revision_request SET status = 'rejected' WHERE status = 'rejected';
+UPDATE revision_request SET status = 'pending' WHERE status = 'requested';
+
+ALTER TABLE revision_request ADD CONSTRAINT revision_status_values 
+  CHECK (status IN ('pending', 'in_progress', 'completed', 'rejected'));
+
+CREATE INDEX IF NOT EXISTS idx_revision_request_order ON revision_request(order_id);
+CREATE INDEX IF NOT EXISTS idx_revision_request_status ON revision_request(status);
+
+COMMENT ON TABLE revision_request IS 'Revision requests made by clients for delivered work';
+
+-- Deliverables (files uploaded by freelancer)
+CREATE TABLE IF NOT EXISTS deliverable (
+  deliverable_id BIGSERIAL PRIMARY KEY,
+  order_id BIGINT NOT NULL REFERENCES "order"(order_id) ON DELETE CASCADE,
+  file_path VARCHAR(500) NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  file_size BIGINT,
+  uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_deliverable_order ON deliverable(order_id);
+
+DROP TRIGGER IF EXISTS trg_deliverable_updated_at ON deliverable;
+CREATE TRIGGER trg_deliverable_updated_at
+  BEFORE UPDATE ON deliverable
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+COMMENT ON TABLE deliverable IS 'Files delivered by freelancer for an order';
+
+-- Transactions (payment records)
+CREATE TABLE IF NOT EXISTS transaction (
+  transaction_id SERIAL PRIMARY KEY,
+  order_id INT NOT NULL REFERENCES "order"(order_id) ON DELETE CASCADE,
+  amount DECIMAL(10, 2) NOT NULL CHECK (amount >= 0),
+  payment_method VARCHAR(50) NOT NULL,
+  card_last4 VARCHAR(4),
+  status VARCHAR(20) NOT NULL DEFAULT 'completed' CHECK (status IN ('pending', 'completed', 'failed', 'refunded')),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_transaction_order ON transaction(order_id);
+CREATE INDEX IF NOT EXISTS idx_transaction_status ON transaction(status);
+
+-- Order table enhancements
+ALTER TABLE "order" ADD COLUMN IF NOT EXISTS project_details TEXT;
+ALTER TABLE "order" ADD COLUMN IF NOT EXISTS revisions_used INT NOT NULL DEFAULT 0;
+
+UPDATE "order" SET status = 'pending' WHERE status = 'submitted';
+
+ALTER TABLE "order" DROP CONSTRAINT IF EXISTS status_values;
+ALTER TABLE "order" ADD CONSTRAINT status_values 
+  CHECK (status IN ('pending', 'in_progress', 'delivered', 'revision_requested', 'completed', 'cancelled', 'disputed'));
+
+COMMENT ON COLUMN "order".revisions_used IS 'Number of revisions used so far for this order';
+
+-- Package table enhancements
+ALTER TABLE package ADD COLUMN IF NOT EXISTS revisions_allowed INT NOT NULL DEFAULT 0;
+
+COMMENT ON COLUMN package.revisions_allowed IS 'Number of revisions included in this package';
+

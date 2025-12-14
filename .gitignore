@@ -27,7 +27,7 @@ BOILERPLATE_UPDATES.md
 MIGRATION_GUIDE.md
 DUAL_ROLE_SYSTEM.md
 V0_PROMPTS.md
-
+.agent/
 # Keep important project documentation
 !README.md
 

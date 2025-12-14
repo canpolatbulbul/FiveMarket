@@ -13,6 +13,7 @@ import {
   deletePortfolioImage,
   addPortfolioImages,
 } from "../controllers/services-controller.js";
+import { getServiceAddons } from "../controllers/orders-controller.js";
 
 const router = express.Router();
 
@@ -57,6 +58,9 @@ router.delete(
   checkClearance("freelancer"),
   deletePortfolioImage
 );
+
+// Get add-ons for a service (public)
+router.get("/:id/addons", checkAuth, getServiceAddons);
 
 // Search/browse services with filters and pagination (requires authentication)
 router.get("/search", checkAuth, searchServices);
