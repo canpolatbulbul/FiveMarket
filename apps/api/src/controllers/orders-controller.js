@@ -260,13 +260,14 @@ export const getOrderDetails = async (req, res) => {
 
     const order = result.rows[0];
 
-    // Authorization check: user must be either the client or the freelancer
+    // Authorization check: user must be either the client, the freelancer, or an admin
     // Ensure numeric comparison
     const clientId = parseInt(order.client_id);
     const freelancerId = parseInt(order.freelancer_id);
     const userId = parseInt(user_id);
+    const isAdmin = req.user.roles?.includes("admin");
 
-    if (clientId !== userId && freelancerId !== userId) {
+    if (!isAdmin && clientId !== userId && freelancerId !== userId) {
       return res.status(403).json({
         error: "Access denied",
         message: "You do not have permission to view this order",
@@ -799,6 +800,62 @@ export const createOrder = async (req, res) => {
     console.error("Error creating order:", error);
     res.status(500).json({
       error: "Failed to create order",
+      message: error.message,
+    });
+  }
+};
+/**
+ * Get all orders (Admin only)
+ * @access Private (Admin)
+ */
+export const getAllOrders = async (req, res) => {
+  try {
+    const { status } = req.query;
+
+    let queryText = `
+      SELECT 
+        o.order_id,
+        o.status,
+        o.total_price,
+        o.due_time,
+        o.placed_time,
+        o.project_details,
+        o.revisions_used,
+        o.created_at,
+        s.service_id,
+        s.title as service_title,
+        p.package_id,
+        p.name as package_name,
+        p.revisions_allowed,
+        client_user.first_name as client_first_name,
+        client_user.last_name as client_last_name,
+        freelancer_user.first_name as freelancer_first_name,
+        freelancer_user.last_name as freelancer_last_name
+      FROM "order" o
+      JOIN package p ON o.package_id = p.package_id
+      JOIN service s ON p.service_id = s.service_id
+      JOIN "user" client_user ON o.client_id = client_user."userID"
+      JOIN "user" freelancer_user ON s.freelancer_id = freelancer_user."userID"
+    `;
+
+    const params = [];
+    if (status) {
+      queryText += ` WHERE o.status = $1`;
+      params.push(status);
+    }
+
+    queryText += ` ORDER BY o.placed_time DESC`;
+
+    const result = await query(queryText, params);
+
+    res.json({
+      success: true,
+      orders: result.rows,
+    });
+  } catch (error) {
+    console.error("Error fetching all orders:", error);
+    res.status(500).json({
+      error: "Failed to fetch orders",
       message: error.message,
     });
   }

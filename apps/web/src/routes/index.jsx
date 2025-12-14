@@ -20,6 +20,9 @@ const MessagesPage = lazy(() => import("../pages/Messages/MessagesPage.jsx"));
 const ConversationPage = lazy(() => import("../pages/Messages/ConversationPage.jsx"));
 const DisputesPage = lazy(() => import("../pages/Dispute/DisputesPage.jsx"));
 const DisputeDetailPage = lazy(() => import("../pages/Dispute/DisputeDetailPage.jsx"));
+const AdminDisputesPage = lazy(() => import("../pages/Admin/AdminDisputesPage.jsx"));
+const AdminOrdersPage = lazy(() => import("../pages/Admin/AdminOrdersPage.jsx"));
+const AdminUsersPage = lazy(() => import("../pages/Admin/AdminUsersPage.jsx"));
 const Register = lazy(() => import("../pages/Auth/Register.jsx"));
 const Login = lazy(() => import("../pages/Auth/Login.jsx"));
 const ForgotPassword = lazy(() => import("../pages/Auth/ForgotPassword.jsx"));
@@ -82,6 +85,18 @@ const AllRoutes = () => {
         {
             path: "/disputes/:id",
             element: <ProtectedRoute><LoadComponent component={DisputeDetailPage} /></ProtectedRoute>
+        },
+        {
+            path: "/admin/disputes",
+            element: <ProtectedRoute><LoadComponent component={AdminDisputesPage} /></ProtectedRoute>
+        },
+        {
+            path: "/admin/orders",
+            element: <ProtectedRoute><LoadComponent component={AdminOrdersPage} /></ProtectedRoute>
+        },
+        {
+            path: "/admin/users",
+            element: <ProtectedRoute><LoadComponent component={AdminUsersPage} /></ProtectedRoute>
         },
         {
             path: "/my-services",

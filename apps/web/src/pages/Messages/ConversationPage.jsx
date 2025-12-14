@@ -28,7 +28,7 @@ export default function ConversationPage() {
   const fetchConversation = async () => {
     try {
       const api = new APICore();
-      const response = await api.get(`/api/conversations/${id}`);
+      const response = await api.get(`/api/messages/${id}`);
       setConversation(response.data.conversation);
       setMessages(response.data.messages || []);
       setUserRole(response.data.userRole);
@@ -50,7 +50,7 @@ export default function ConversationPage() {
     setSending(true);
     try {
       const api = new APICore();
-      await api.post(`/api/conversations/${id}/messages`, {
+      await api.post(`/api/messages/${id}/messages`, {
         content: newMessage.trim(),
       });
       setNewMessage("");

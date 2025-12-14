@@ -11,6 +11,7 @@ import categoriesRouter from "./routers/categories-router.js";
 import ordersRouter from "./routers/orders-router.js";
 import messagesRouter from "./routers/messages-router.js";
 import disputesRouter from "./routers/disputes-router.js";
+import usersRouter from "./routers/users-router.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,7 +48,8 @@ app.use("/api/auth", authRouter);
 app.use("/api/services", servicesRouter);
 app.use("/api/categories", categoriesRouter);
 app.use("/api/orders", ordersRouter);
-app.use("/api/conversations", messagesRouter);
+app.use("/api/messages", messagesRouter);
 app.use("/api/disputes", disputesRouter);
+app.use("/api/users", usersRouter);
 
 export default app;

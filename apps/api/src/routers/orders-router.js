@@ -8,6 +8,7 @@ import {
   uploadDeliverable,
   completeOrder,
   requestRevision,
+  getAllOrders,
 } from "../controllers/orders-controller.js";
 import checkAuth from "../middleware/auth-check.js";
 import checkClearance from "../middleware/clearance-check.js";
@@ -29,6 +30,18 @@ router.get(
   checkAuth,
   checkClearance(ClearanceLevels.CLIENT),
   getClientOrders
+);
+
+/**
+ * @route   GET /api/orders/admin/all
+ * @desc    Get all orders (Admin only)
+ * @access  Private (Admin only)
+ */
+router.get(
+  "/admin/all",
+  checkAuth,
+  checkClearance(ClearanceLevels.ADMIN),
+  getAllOrders
 );
 
 /**

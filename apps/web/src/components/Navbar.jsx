@@ -95,32 +95,45 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-6">
             {user ? (
               <>
-                {/* Common for logged-in users */}
-                <Link to="/browse" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
-                  Browse
-                </Link>
-                <Link to="/my-orders" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
-                  Orders
-                </Link>
-                <Link to="/messages" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
-                  Messages
-                </Link>
+                {/* Admin Navigation */}
+                {isAdmin ? (
+                  <>
+                    <Link to="/" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                      Dashboard
+                    </Link>
+                    <Link to="/admin/users" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                      Users
+                    </Link>
+                    <Link to="/admin/disputes" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                      Disputes
+                    </Link>
+                    <Link to="/admin/orders" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                      Orders
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    {/* Regular User Navigation */}
+                    <Link to="/browse" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                      Browse
+                    </Link>
+                    <Link to="/my-orders" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                      Orders
+                    </Link>
+                    <Link to="/messages" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                      Messages
+                    </Link>
 
-                {/* Admin */}
-                {isAdmin && (
-                  <Link to="/admin" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
-                    Admin
-                  </Link>
-                )}
-
-                {/* Freelancer Create Service Button - Rightmost */}
-                {isFreelancer && (
-                  <Link
-                    to="/services/create"
-                    className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-200"
-                  >
-                    Create Service
-                  </Link>
+                    {/* Freelancer Create Service Button */}
+                    {isFreelancer && (
+                      <Link
+                        to="/services/create"
+                        className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-200"
+                      >
+                        Create Service
+                      </Link>
+                    )}
+                  </>
                 )}
 
                 {/* Become a Freelancer Button - For clients only */}
@@ -324,15 +337,6 @@ export default function Navbar() {
                     Messages
                   </Link>
 
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      className="block px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Admin
-                    </Link>
-                  )}
 
                   {/* Mobile User Menu */}
                   <div className="border-t border-slate-200 pt-4 mt-4">

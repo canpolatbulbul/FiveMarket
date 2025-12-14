@@ -4,30 +4,52 @@ import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import CategoryNav from "@/components/CategoryNav";
 import Footer from "@/components/Footer";
-import { ArrowRight, TrendingUp, Star, Briefcase, MessageSquare, ShoppingBag, AlertCircle, Users } from "lucide-react";
+import { ArrowRight, TrendingUp, Star, Briefcase, MessageSquare, ShoppingBag, AlertCircle, Users, Shield, Package } from "lucide-react";
 import { APICore } from "@/helpers/apiCore";
 
 export default function HomePage() {
   const { user } = useAuth();
   const [featuredServices, setFeaturedServices] = useState([]);
+  const [adminStats, setAdminStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchFeaturedServices = async () => {
+    const fetchData = async () => {
       try {
         const api = new APICore();
-        // Fetch some services to display
-        const response = await api.get("/api/services/featured");
-        setFeaturedServices(response.data.services || []);
+        
+        if (user?.roles?.includes("admin")) {
+          // Fetch admin stats
+          const [usersRes, ordersRes, disputesRes] = await Promise.all([
+            api.get("/api/users/admin/all"),
+            api.get("/api/orders/admin/all"),
+            api.get("/api/disputes/admin/all"),
+          ]);
+          
+          setAdminStats({
+            totalUsers: usersRes.data.counts?.all || 0,
+            totalOrders: ordersRes.data.orders?.length || 0,
+            activeDisputes: disputesRes.data.disputes?.filter(d => d.status === 'open' || d.status === 'under_review').length || 0,
+            totalDisputes: disputesRes.data.disputes?.length || 0,
+          });
+        } else {
+          // Fetch featured services for regular users
+          const response = await api.get("/api/services/featured");
+          setFeaturedServices(response.data.services || []);
+        }
       } catch (error) {
-        console.error("Failed to fetch services:", error);
+        console.error("Failed to fetch data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchFeaturedServices();
-  }, []);
+    if (user) {
+      fetchData();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   const isFreelancer = user?.roles?.includes("freelancer");
   const isAdmin = user?.roles?.includes("admin");
@@ -116,167 +138,230 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-purple-50 to-white">
       <Navbar />
-      <CategoryNav />
+      {!isAdmin && <CategoryNav />}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">
-            Welcome back, {user?.first_name}!
-          </h1>
-          <p className="text-lg text-slate-600">
-            {isFreelancer
-              ? "Ready to grow your freelance business?"
-              : "Let's find the perfect service for your needs"}
-          </p>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Admin Dashboard */}
+        {isAdmin ? (
+          <>
+            {/* Welcome Header */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <Shield className="h-10 w-10 text-purple-600" />
+                <h1 className="text-4xl font-bold text-slate-900">Admin Dashboard</h1>
+              </div>
+              <p className="text-lg text-slate-600">
+                Welcome back, {user?.first_name}! Here's what's happening on the platform.
+              </p>
+            </div>
 
-        {/* Quick Actions */}
-        <div className="mb-10">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Quick Actions</h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            {quickActions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <Link
-                  key={action.title}
-                  to={action.link}
-                  className="group relative overflow-hidden bg-white rounded-2xl p-6 border border-slate-200 hover:border-transparent hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center text-white shadow-lg`}>
-                      <Icon className="h-6 w-6" />
+            {/* Stats Grid */}
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                <p className="mt-4 text-slate-600">Loading dashboard...</p>
+              </div>
+            ) : adminStats && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-purple-100 rounded-lg">
+                      <Users className="h-6 w-6 text-purple-600" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors">
+                    <span className="text-2xl font-bold text-slate-900">{adminStats.totalUsers}</span>
+                  </div>
+                  <h3 className="text-sm font-medium text-slate-600">Total Users</h3>
+                  <Link to="/admin/users" className="text-sm text-indigo-600 hover:text-indigo-700 mt-2 inline-flex items-center gap-1">
+                    Manage <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+
+                <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                      <Package className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <span className="text-2xl font-bold text-slate-900">{adminStats.totalOrders}</span>
+                  </div>
+                  <h3 className="text-sm font-medium text-slate-600">Total Orders</h3>
+                  <Link to="/admin/orders" className="text-sm text-indigo-600 hover:text-indigo-700 mt-2 inline-flex items-center gap-1">
+                    View All <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+
+                <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-red-100 rounded-lg">
+                      <AlertCircle className="h-6 w-6 text-red-600" />
+                    </div>
+                    <span className="text-2xl font-bold text-slate-900">{adminStats.activeDisputes}</span>
+                  </div>
+                  <h3 className="text-sm font-medium text-slate-600">Active Disputes</h3>
+                  <Link to="/admin/disputes" className="text-sm text-indigo-600 hover:text-indigo-700 mt-2 inline-flex items-center gap-1">
+                    Review <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+
+                <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-green-100 rounded-lg">
+                      <ShoppingBag className="h-6 w-6 text-green-600" />
+                    </div>
+                    <span className="text-2xl font-bold text-slate-900">{adminStats.totalDisputes}</span>
+                  </div>
+                  <h3 className="text-sm font-medium text-slate-600">Total Disputes</h3>
+                  <Link to="/admin/disputes?filter=all" className="text-sm text-indigo-600 hover:text-indigo-700 mt-2 inline-flex items-center gap-1">
+                    View All <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Actions */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Quick Actions</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {quickActions.map((action, index) => (
+                  <Link
+                    key={index}
+                    to={action.link}
+                    className="group bg-white rounded-xl border border-slate-200 p-6 hover:shadow-xl transition-all duration-200"
+                  >
+                    <div className={`inline-flex p-3 rounded-lg bg-gradient-to-r ${action.color} mb-4`}>
+                      <action.icon className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-2 group-hover:text-indigo-600 transition-colors">
+                      {action.title}
+                    </h3>
+                    <p className="text-slate-600 text-sm mb-4">{action.description}</p>
+                    <div className="flex items-center text-indigo-600 font-medium group-hover:gap-2 transition-all">
+                      Access <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Regular User View */}
+            {/* Hero Section */}
+            {!user && (
+              <div className="text-center mb-16">
+                <h1 className="text-5xl md:text-6xl font-bold text-slate-900 mb-6 leading-tight">
+                  Find the perfect
+                  <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"> freelance </span>
+                  services for your business
+                </h1>
+                <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
+                  Work with talented freelancers from around the world. Get your projects done faster and better.
+                </p>
+                <div className="flex gap-4 justify-center">
+                  <Link
+                    to="/register"
+                    className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                  >
+                    Get Started <ArrowRight className="h-5 w-5" />
+                  </Link>
+                  <Link
+                    to="/browse"
+                    className="px-8 py-4 bg-white text-slate-700 rounded-xl font-semibold border-2 border-slate-200 hover:border-indigo-600 hover:text-indigo-600 transition-all duration-200"
+                  >
+                    Browse Services
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Actions for logged-in users */}
+            {user && (
+              <div className="mb-16">
+                <h2 className="text-3xl font-bold text-slate-900 mb-2">
+                  Welcome back, {user.first_name}! 👋
+                </h2>
+                <p className="text-slate-600 mb-8">Here's what you can do today</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {quickActions.map((action, index) => (
+                    <Link
+                      key={index}
+                      to={action.link}
+                      className="group bg-white rounded-xl border border-slate-200 p-6 hover:shadow-xl transition-all duration-200"
+                    >
+                      <div className={`inline-flex p-3 rounded-lg bg-gradient-to-r ${action.color} mb-4`}>
+                        <action.icon className="h-6 w-6 text-white" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-slate-900 mb-2 group-hover:text-indigo-600 transition-colors">
                         {action.title}
                       </h3>
-                      <p className="text-sm text-slate-600">{action.description}</p>
-                    </div>
-                    <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Featured Services */}
-        <div className="mb-10">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-slate-900">
-              {isFreelancer ? "Trending Services" : "Recommended for You"}
-            </h2>
-            <Link
-              to="/browse"
-              className="text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-2 group"
-            >
-              View All
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-
-          {loading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 animate-pulse">
-                  <div className="bg-slate-200 h-48 rounded-lg mb-4" />
-                  <div className="bg-slate-200 h-4 rounded mb-2" />
-                  <div className="bg-slate-200 h-4 rounded w-2/3" />
-                </div>
-              ))}
-            </div>
-          ) : featuredServices.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredServices.slice(0, 8).map((service) => (
-                <Link
-                  key={service.service_id}
-                  to={`/service/${service.service_id}`}
-                  className="group bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full"
-                >
-                  {/* Image/Thumbnail */}
-                  <div className="relative h-40 bg-gradient-to-br from-blue-100 via-cyan-50 to-indigo-100 overflow-hidden">
-                    {service.portfolio_image ? (
-                      <img
-                        src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${service.portfolio_image}`}
-                        alt={service.title}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-5xl group-hover:scale-110 transition-transform duration-300">
-                        {service.category_emoji || "💼"}
+                      <p className="text-slate-600 text-sm mb-4">{action.description}</p>
+                      <div className="flex items-center text-indigo-600 font-medium group-hover:gap-2 transition-all">
+                        Go <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                       </div>
-                    )}
-                    {/* Rating badge */}
-                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-sm">
-                      <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
-                      <span className="text-xs font-semibold text-slate-700">
-                        {service.rating || "5.0"}
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        ({service.reviews || "0"})
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Content - flex-1 makes this grow to fill space */}
-                  <div className="p-4 flex flex-col flex-1">
-                    {/* Freelancer name */}
-                    <p className="text-xs text-slate-500 mb-1">
-                      {service.freelancer_name}
-                    </p>
-
-                    {/* Title - fixed height with line-clamp */}
-                    <h3 className="font-semibold text-slate-900 mb-auto line-clamp-2 group-hover:text-indigo-600 transition-colors min-h-[2.75rem]">
-                      {service.title}
-                    </h3>
-
-                    {/* Price section - always at bottom */}
-                    <div className="flex items-center justify-between pt-4 mt-3 border-t border-slate-100">
-                      <span className="text-xs text-slate-500 uppercase tracking-wide">Starting at</span>
-                      <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                        ${service.min_price || "50"}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
-              <p className="text-slate-600">No services available at the moment.</p>
-              <Link
-                to="/browse"
-                className="inline-block mt-4 text-indigo-600 hover:text-indigo-700 font-medium"
-              >
-                Browse all services →
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* Popular Categories */}
-        <div className="mb-10">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Popular Categories</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categories.map((category) => (
-              <Link
-                key={category.name}
-                to={category.link}
-                className="group bg-white rounded-xl p-6 border border-slate-200 hover:border-indigo-300 hover:shadow-lg transition-all duration-300 flex items-center gap-4"
-              >
-                <div className="text-4xl">{category.emoji}</div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                    {category.name}
-                  </h3>
-                  <p className="text-sm text-slate-600">{category.count} services</p>
+                    </Link>
+                  ))}
                 </div>
-                <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
-              </Link>
-            ))}
-          </div>
-        </div>
+              </div>
+            )}
+
+            {/* Popular Categories */}
+            <div className="mb-16">
+              <h2 className="text-3xl font-bold text-slate-900 mb-8">Popular Categories</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                {categories.map((category, index) => (
+                  <Link
+                    key={index}
+                    to={category.link}
+                    className="bg-white rounded-xl border border-slate-200 p-6 text-center hover:shadow-lg hover:border-indigo-600 transition-all duration-200 group"
+                  >
+                    <div className="text-4xl mb-3">{category.emoji}</div>
+                    <h3 className="font-semibold text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors">
+                      {category.name}
+                    </h3>
+                    <p className="text-sm text-slate-500">{category.count}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Featured Services */}
+            {!loading && featuredServices.length > 0 && (
+              <div className="mb-16">
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-3xl font-bold text-slate-900">Popular Services</h2>
+                  <Link
+                    to="/browse"
+                    className="text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-2"
+                  >
+                    View All <ArrowRight className="h-5 w-5" />
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {featuredServices.slice(0, 4).map((service) => (
+                    <Link
+                      key={service.service_id}
+                      to={`/services/${service.service_id}`}
+                      className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-200 group"
+                    >
+                      <div className="aspect-video bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                        <Star className="h-12 w-12 text-indigo-600" />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-semibold text-slate-900 mb-2 group-hover:text-indigo-600 transition-colors line-clamp-2">
+                          {service.title}
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-3 line-clamp-2">{service.description}</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-500">Starting at</span>
+                          <span className="font-bold text-slate-900">${service.starting_price}</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       <Footer />

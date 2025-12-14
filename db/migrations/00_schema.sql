@@ -57,9 +57,7 @@ CREATE INDEX IF NOT EXISTS idx_freelancer_user_id ON freelancer("userID");
 
 CREATE TABLE IF NOT EXISTS administrator (
   "userID" BIGINT PRIMARY KEY REFERENCES "user"("userID") ON DELETE CASCADE,
-  role_level INT NOT NULL,
-  hired_at DATE NOT NULL,
-  CONSTRAINT role_level_range CHECK (role_level BETWEEN 1 AND 10)
+  hired_at DATE NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_administrator_user_id ON administrator("userID");
@@ -496,6 +494,9 @@ CREATE INDEX IF NOT EXISTS idx_order_addon_addon ON order_addon(addon_id);
 
 COMMENT ON TABLE order_addon IS 'Add-ons selected by client when placing an order';
 COMMENT ON COLUMN order_addon.price_at_purchase IS 'Price of addon at time of purchase (for historical accuracy)';
+
+-- Remove role_level from administrator table
+ALTER TABLE administrator DROP COLUMN IF EXISTS role_level;
 
 -- Revision Requests (update existing table)
 DO $$ 

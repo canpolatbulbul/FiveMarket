@@ -50,7 +50,7 @@ export default function DisputeDetailPage() {
     try {
       const api = new APICore();
       await api.patch(`/api/disputes/${id}/status`, { status: newStatus });
-      toast.success(`Dispute ${newStatus} successfully!`);
+      toast.success(`Dispute ${newStatus.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())} successfully!`);
       fetchDisputeDetails();
     } catch (error) {
       console.error("Error updating dispute status:", error);

@@ -150,11 +150,7 @@ export const login = async (req, res) => {
           WHEN EXISTS (SELECT 1 FROM client WHERE "userID" = u."userID")
           THEN ARRAY['client']
           ELSE ARRAY[]::VARCHAR[]
-        END as roles,
-        COALESCE(
-          (SELECT role_level FROM administrator WHERE "userID" = u."userID"),
-          0
-        ) as admin_level
+        END as roles
       FROM "user" u
       WHERE u.email = $1
     `;
