@@ -513,6 +513,23 @@ export const completeOrder = async (req, res) => {
       });
     }
 
+    // Check if there's an open dispute for this order
+    const disputeCheck = await query(
+      `SELECT dispute_id, status FROM dispute_resolution WHERE order_id = $1`,
+      [id]
+    );
+
+    if (disputeCheck.rows.length > 0) {
+      const dispute = disputeCheck.rows[0];
+      if (dispute.status === "open" || dispute.status === "under_review") {
+        return res.status(400).json({
+          error: "Dispute in progress",
+          message:
+            "Cannot complete order while a dispute is open or under review",
+        });
+      }
+    }
+
     // Update order status
     const result = await query(
       `UPDATE "order" SET status = 'completed', updated_at = NOW() WHERE order_id = $1 RETURNING *`,

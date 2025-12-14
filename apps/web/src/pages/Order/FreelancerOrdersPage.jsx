@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { APICore } from "@/helpers/apiCore";
-import { Clock, Package, User, Filter, PlayCircle } from "lucide-react";
+import { Clock, Package, User, Filter, PlayCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function FreelancerOrdersPage() {
@@ -108,9 +108,18 @@ export default function FreelancerOrdersPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">My Sales</h1>
-          <p className="text-slate-600">Manage orders for your services</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">My Sales</h1>
+            <p className="text-slate-600">Manage orders for your services</p>
+          </div>
+          <button
+            onClick={() => navigate("/disputes")}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2"
+          >
+            <AlertTriangle className="h-5 w-5" />
+            View Disputes
+          </button>
         </div>
 
         {/* Status Filter */}

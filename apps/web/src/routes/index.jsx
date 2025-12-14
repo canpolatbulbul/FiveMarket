@@ -18,6 +18,8 @@ const FreelancerOrdersPage = lazy(() => import("../pages/Order/FreelancerOrdersP
 const OrderDetailPage = lazy(() => import("../pages/Order/OrderDetailPage.jsx"));
 const MessagesPage = lazy(() => import("../pages/Messages/MessagesPage.jsx"));
 const ConversationPage = lazy(() => import("../pages/Messages/ConversationPage.jsx"));
+const DisputesPage = lazy(() => import("../pages/Dispute/DisputesPage.jsx"));
+const DisputeDetailPage = lazy(() => import("../pages/Dispute/DisputeDetailPage.jsx"));
 const Register = lazy(() => import("../pages/Auth/Register.jsx"));
 const Login = lazy(() => import("../pages/Auth/Login.jsx"));
 const ForgotPassword = lazy(() => import("../pages/Auth/ForgotPassword.jsx"));
@@ -72,6 +74,14 @@ const AllRoutes = () => {
         {
             path: "/messages/:id",
             element: <ProtectedRoute><LoadComponent component={ConversationPage} /></ProtectedRoute>
+        },
+        {
+            path: "/disputes",
+            element: <ProtectedRoute><LoadComponent component={DisputesPage} /></ProtectedRoute>
+        },
+        {
+            path: "/disputes/:id",
+            element: <ProtectedRoute><LoadComponent component={DisputeDetailPage} /></ProtectedRoute>
         },
         {
             path: "/my-services",

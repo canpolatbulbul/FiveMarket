@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import CategoryNav from "@/components/CategoryNav";
 import Footer from "@/components/Footer";
-import { ArrowRight, TrendingUp, Star, Briefcase, MessageSquare, ShoppingBag } from "lucide-react";
+import { ArrowRight, TrendingUp, Star, Briefcase, MessageSquare, ShoppingBag, AlertCircle, Users } from "lucide-react";
 import { APICore } from "@/helpers/apiCore";
 
 export default function HomePage() {
@@ -30,14 +30,39 @@ export default function HomePage() {
   }, []);
 
   const isFreelancer = user?.roles?.includes("freelancer");
+  const isAdmin = user?.roles?.includes("admin");
 
-  const quickActions = isFreelancer
+  const quickActions = isAdmin
     ? [
         {
-          title: "Create a New Service",
-          description: "Start offering your skills to clients",
+          title: "All Disputes",
+          description: "Review and resolve user disputes",
+          icon: AlertCircle,
+          link: "/admin/disputes",
+          color: "from-red-500 to-orange-600",
+        },
+        {
+          title: "All Orders",
+          description: "Monitor platform transactions",
+          icon: ShoppingBag,
+          link: "/admin/orders",
+          color: "from-blue-500 to-cyan-600",
+        },
+        {
+          title: "User Management",
+          description: "Manage users and permissions",
+          icon: Users,
+          link: "/admin/users",
+          color: "from-purple-500 to-pink-600",
+        },
+      ]
+    : isFreelancer
+    ? [
+        {
+          title: "My Sales",
+          description: "View and manage your orders",
           icon: Briefcase,
-          link: "/create-service",
+          link: "/my-sales",
           color: "from-indigo-500 to-purple-600",
         },
         {

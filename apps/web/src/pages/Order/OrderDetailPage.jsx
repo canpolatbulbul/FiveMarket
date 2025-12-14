@@ -19,6 +19,7 @@ import {
   Upload,
   Download,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,6 +34,8 @@ export default function OrderDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [showRevisionModal, setShowRevisionModal] = useState(false);
   const [revisionReason, setRevisionReason] = useState("");
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [disputeDescription, setDisputeDescription] = useState("");
 
   useEffect(() => {
     fetchOrderDetails();
@@ -162,6 +165,30 @@ export default function OrderDetailPage() {
       toast.error(error.message || "Failed to request revision");
     }
   };
+
+  const handleOpenDispute = async () => {
+    if (!disputeDescription.trim()) {
+      toast.error("Please provide a description for the dispute");
+      return;
+    }
+
+    try {
+      const api = new APICore();
+      const response = await api.post(`/api/disputes`, {
+        order_id: id,
+        description: disputeDescription,
+      });
+      toast.success("Dispute created successfully!");
+      setShowDisputeModal(false);
+      setDisputeDescription("");
+      // Redirect to dispute detail page
+      navigate(`/disputes/${response.data.dispute.dispute_id}`);
+    } catch (error) {
+      console.error("Error creating dispute:", error);
+      toast.error(error.message || "Failed to create dispute");
+    }
+  };
+
 
   if (loading) {
     return (
@@ -460,6 +487,26 @@ export default function OrderDetailPage() {
               </div>
             )}
 
+            {/* Open Dispute (Available for both client and freelancer) */}
+            {(userRole === "client" || userRole === "freelancer") && 
+             (order.status === "delivered" || order.status === "in_progress" || order.status === "revision_requested") &&
+             order.status !== "disputed" && (
+              <div className="bg-white rounded-xl border border-slate-200 p-6">
+                <h2 className="text-lg font-bold text-slate-900 mb-4">Need Help?</h2>
+                <button
+                  onClick={() => setShowDisputeModal(true)}
+                  className="w-full px-4 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <AlertTriangle className="h-5 w-5" />
+                  Open Dispute
+                </button>
+                <p className="text-xs text-slate-500 mt-2 text-center">
+                  If you're experiencing issues with this order
+                </p>
+              </div>
+            )}
+
+
             {/* Order Timeline */}
             <div className="bg-white rounded-xl border border-slate-200 p-6">
               <div className="flex items-center gap-2 mb-4">
@@ -651,6 +698,71 @@ export default function OrderDetailPage() {
                   className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Submit Request
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dispute Creation Modal */}
+      {showDisputeModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowDisputeModal(false);
+              setDisputeDescription("");
+            }
+          }}
+        >
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-slate-900">Open Dispute</h3>
+              <button
+                onClick={() => {
+                  setShowDisputeModal(false);
+                  setDisputeDescription("");
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Describe the Issue *
+                </label>
+                <textarea
+                  value={disputeDescription}
+                  onChange={(e) => setDisputeDescription(e.target.value)}
+                  placeholder="Please explain the issue you're experiencing with this order..."
+                  rows={5}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Be as detailed as possible to help us resolve your issue quickly
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowDisputeModal(false);
+                    setDisputeDescription("");
+                  }}
+                  className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleOpenDispute}
+                  disabled={!disputeDescription.trim()}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Submit Dispute
                 </button>
               </div>
             </div>

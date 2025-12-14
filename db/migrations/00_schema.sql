@@ -331,7 +331,6 @@ CREATE TRIGGER trg_review_updated_at
 CREATE TABLE IF NOT EXISTS dispute_resolution (
   dispute_id BIGSERIAL PRIMARY KEY,
   order_id BIGINT NOT NULL REFERENCES "order"(order_id) ON DELETE CASCADE,
-  category_id BIGINT REFERENCES service_category(category_id) ON DELETE SET NULL,
   creation_time TIMESTAMPTZ NOT NULL DEFAULT now(),
   description TEXT,
   status VARCHAR(50) NOT NULL,
