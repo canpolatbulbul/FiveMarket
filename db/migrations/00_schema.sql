@@ -128,6 +128,8 @@ CREATE TABLE IF NOT EXISTS service (
   freelancer_id BIGINT NOT NULL REFERENCES freelancer("userID") ON DELETE CASCADE,
   title VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  paused_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -591,4 +593,23 @@ COMMENT ON COLUMN "order".revisions_used IS 'Number of revisions used so far for
 ALTER TABLE package ADD COLUMN IF NOT EXISTS revisions_allowed INT NOT NULL DEFAULT 0;
 
 COMMENT ON COLUMN package.revisions_allowed IS 'Number of revisions included in this package';
+
+-- ============================================================================
+-- Freelancer Withdrawals
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS withdrawal_request (
+  withdrawal_id BIGSERIAL PRIMARY KEY,
+  freelancer_id BIGINT NOT NULL REFERENCES freelancer("userID") ON DELETE CASCADE,
+  amount DECIMAL(10,2) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  processed_at TIMESTAMPTZ,
+  notes TEXT,
+  CONSTRAINT positive_amount CHECK (amount > 0),
+  CONSTRAINT valid_status CHECK (status IN ('pending', 'approved', 'rejected', 'completed'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_withdrawal_freelancer ON withdrawal_request(freelancer_id);
+CREATE INDEX IF NOT EXISTS idx_withdrawal_status ON withdrawal_request(status);
 

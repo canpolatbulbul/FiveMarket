@@ -104,9 +104,9 @@ INSERT INTO freelancer ("userID", total_earned) VALUES
 (19, 11200.75),
 (20, 24300.00);
 
-INSERT INTO administrator ("userID", role_level, hired_at) VALUES
-(21, 5, '2023-01-15'),
-(22, 10, '2022-06-01');
+INSERT INTO administrator ("userID", hired_at) VALUES
+(21, '2023-01-15'),
+(22, '2022-06-01');
 
 -- ============================================================================
 -- Service Categories
