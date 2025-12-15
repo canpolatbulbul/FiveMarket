@@ -238,7 +238,17 @@ export const getOrderDetails = async (req, res) => {
           ))
           FROM revision_request r
           WHERE r.order_id = o.order_id
-        ) as revision_requests
+        ) as revision_requests,
+        (
+          SELECT json_build_object(
+            'review_id', rev.review_id,
+            'rating', rev.rating,
+            'comment', rev.comment,
+            'created_at', rev.created_at
+          )
+          FROM review rev
+          WHERE rev.order_id = o.order_id
+        ) as review
        FROM "order" o
        JOIN package p ON o.package_id = p.package_id
        JOIN service s ON p.service_id = s.service_id
@@ -476,12 +486,61 @@ export const uploadDeliverable = async (req, res) => {
 export const completeOrder = async (req, res) => {
   try {
     const { id } = req.params;
+    const { rating, review_text } = req.body;
     const { decodeUserID } = await import("../utils/hashids.js");
     const user_id = decodeUserID(req.user.userID);
 
+    // Validate review data
+    if (rating === undefined || rating === null) {
+      return res.status(400).json({
+        error: "Rating required",
+        message: "Please provide a rating for this order",
+      });
+    }
+
+    // Validate rating (0-5 with 0.5 increments)
+    const validRating = parseFloat(rating);
+    if (isNaN(validRating) || validRating < 0 || validRating > 5) {
+      return res.status(400).json({
+        error: "Invalid rating",
+        message: "Rating must be between 0 and 5",
+      });
+    }
+
+    // Check if rating is in 0.5 increments
+    if ((validRating * 2) % 1 !== 0) {
+      return res.status(400).json({
+        error: "Invalid rating",
+        message: "Rating must be in 0.5 increments (e.g., 3.5, 4.0, 4.5)",
+      });
+    }
+
+    // Validate review text
+    if (!review_text || typeof review_text !== "string") {
+      return res.status(400).json({
+        error: "Review required",
+        message: "Please provide a written review",
+      });
+    }
+
+    const trimmedReview = review_text.trim();
+    if (trimmedReview.length < 10) {
+      return res.status(400).json({
+        error: "Review too short",
+        message: "Review must be at least 10 characters long",
+      });
+    }
+
+    if (trimmedReview.length > 1000) {
+      return res.status(400).json({
+        error: "Review too long",
+        message: "Review must be less than 1000 characters",
+      });
+    }
+
     // Get order
     const orderResult = await query(
-      `SELECT o.*, s.freelancer_id
+      `SELECT o.*, s.freelancer_id, s.service_id
        FROM "order" o
        JOIN package p ON o.package_id = p.package_id
        JOIN service s ON p.service_id = s.service_id
@@ -530,6 +589,13 @@ export const completeOrder = async (req, res) => {
         });
       }
     }
+
+    // Insert review
+    await query(
+      `INSERT INTO review (order_id, rating, comment, created_at)
+       VALUES ($1, $2, $3, NOW())`,
+      [id, validRating, trimmedReview]
+    );
 
     // Update order status
     const result = await query(

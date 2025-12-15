@@ -104,7 +104,7 @@ export default function HomePage() {
           title: "View Orders",
           description: "Track your active projects",
           icon: ShoppingBag,
-          link: "/orders",
+          link: "/my-orders",
           color: "from-blue-500 to-cyan-600",
         },
         {
@@ -412,27 +412,47 @@ export default function HomePage() {
                   </Link>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {featuredServices.slice(0, 4).map((service) => (
-                    <Link
-                      key={service.service_id}
-                      to={`/services/${service.service_id}`}
-                      className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-200 group"
-                    >
-                      <div className="aspect-video bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
-                        <Star className="h-12 w-12 text-indigo-600" />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-slate-900 mb-2 group-hover:text-indigo-600 transition-colors line-clamp-2">
-                          {service.title}
-                        </h3>
-                        <p className="text-sm text-slate-600 mb-3 line-clamp-2">{service.description}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-slate-500">Starting at</span>
-                          <span className="font-bold text-slate-900">${service.starting_price}</span>
+                  {featuredServices.slice(0, 4).map((service) => {
+                    // Map category IDs to placeholder images
+                    const categoryPlaceholders = {
+                      1: '/placeholders/graphics_design.png',      // Graphics & Design
+                      2: '/placeholders/digital_marketing.png',   // Digital Marketing
+                      3: '/placeholders/writing_content.png',     // Writing & Translation
+                      4: '/placeholders/video_animation.png',     // Video & Animation
+                      5: '/placeholders/programming_tech.png',    // Programming & Tech
+                      6: '/placeholders/music_audio.png',         // Music & Audio
+                    };
+                    
+                    const imageUrl = service.portfolio_image 
+                      ? `http://localhost:5001${service.portfolio_image}`
+                      : categoryPlaceholders[service.category_id] || '/placeholders/graphics_design.png';
+                    
+                    return (
+                      <Link
+                        key={service.service_id}
+                        to={`/service/${service.service_id}`}
+                        className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-200 group"
+                      >
+                        <div className="aspect-video overflow-hidden">
+                          <img 
+                            src={imageUrl} 
+                            alt={service.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
                         </div>
-                      </div>
-                    </Link>
-                  ))}
+                        <div className="p-4">
+                          <h3 className="font-semibold text-slate-900 mb-2 group-hover:text-indigo-600 transition-colors line-clamp-2">
+                            {service.title}
+                          </h3>
+                          <p className="text-sm text-slate-600 mb-3 line-clamp-2">{service.description}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-slate-500">Starting at</span>
+                            <span className="font-bold text-slate-900">${service.starting_price}</span>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             )}

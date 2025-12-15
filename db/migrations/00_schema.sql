@@ -307,12 +307,12 @@ CREATE TRIGGER trg_revision_request_updated_at
 CREATE TABLE IF NOT EXISTS review (
   review_id BIGSERIAL PRIMARY KEY,
   order_id BIGINT NOT NULL UNIQUE REFERENCES "order"(order_id) ON DELETE CASCADE,
-  rating INT NOT NULL,
+  rating DECIMAL(2,1) NOT NULL,
   comment TEXT,
   submit_time TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT rating_range CHECK (rating BETWEEN 1 AND 5)
+  CONSTRAINT rating_range CHECK (rating BETWEEN 0 AND 5)
 );
 
 CREATE INDEX IF NOT EXISTS idx_review_order ON review(order_id);

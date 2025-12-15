@@ -25,7 +25,21 @@ export const getFeaturedServices = async (req, res) => {
           WHERE pi.service_id = s.service_id 
           ORDER BY pi.display_order 
           LIMIT 1
-        ) as portfolio_image
+        ) as portfolio_image,
+        (
+          SELECT sc.category_id
+          FROM services_in_category sic
+          JOIN service_category sc ON sic.category_id = sc.category_id
+          WHERE sic.service_id = s.service_id
+          LIMIT 1
+        ) as category_id,
+        (
+          SELECT sc.description
+          FROM services_in_category sic
+          JOIN service_category sc ON sic.category_id = sc.category_id
+          WHERE sic.service_id = s.service_id
+          LIMIT 1
+        ) as category_name
       FROM service s
       JOIN "user" u ON s.freelancer_id = u."userID"
       JOIN package p ON s.service_id = p.service_id
@@ -44,11 +58,13 @@ export const getFeaturedServices = async (req, res) => {
       description: row.description,
       freelancer_id: row.freelancer_id,
       freelancer_name: `${row.first_name} ${row.last_name}`,
-      min_price: parseFloat(row.min_price),
+      starting_price: parseFloat(row.min_price),
       package_count: parseInt(row.package_count),
       rating: parseFloat(row.avg_rating).toFixed(1),
       reviews: parseInt(row.review_count),
       portfolio_image: row.portfolio_image, // First portfolio image or null
+      category_id: row.category_id,
+      category_name: row.category_name,
     }));
 
     res.json({ services });
@@ -189,8 +205,7 @@ export const getServiceById = async (req, res) => {
     const categoryIdsQuery = `
       SELECT DISTINCT sic.category_id
       FROM services_in_category sic
-      JOIN package p ON sic.package_id = p.package_id
-      WHERE p.service_id = $1
+      WHERE sic.service_id = $1
     `;
     const categoryIdsResult = await query(categoryIdsQuery, [id]);
     const category_ids = categoryIdsResult.rows.map((row) => row.category_id);

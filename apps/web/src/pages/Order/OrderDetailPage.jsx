@@ -20,9 +20,11 @@ import {
   Download,
   X,
   AlertTriangle,
+  Star,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import ReviewModal from "@/components/ReviewModal";
 
 export default function OrderDetailPage() {
   const { user } = useAuth();
@@ -36,6 +38,7 @@ export default function OrderDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [showRevisionModal, setShowRevisionModal] = useState(false);
   const [revisionReason, setRevisionReason] = useState("");
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [disputeDescription, setDisputeDescription] = useState("");
 
@@ -137,15 +140,17 @@ export default function OrderDetailPage() {
     }
   };
 
-  const handleCompleteOrder = async () => {
+  const handleCompleteOrder = async (reviewData) => {
     try {
       const api = new APICore();
-      await api.patch(`/api/orders/${id}/complete`);
-      toast.success("Order completed successfully!");
+      await api.patch(`/api/orders/${id}/complete`, reviewData);
+      toast.success("Order completed successfully! Thank you for your review.");
+      setShowReviewModal(false);
       fetchOrderDetails();
     } catch (error) {
       console.error("Error completing order:", error);
       toast.error(error.message || "Failed to complete order");
+      throw error;
     }
   };
 
@@ -417,6 +422,58 @@ export default function OrderDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* Review */}
+            {order.review && (
+              <div className="bg-white rounded-xl border border-slate-200 p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Star className="h-5 w-5 text-yellow-400" fill="currentColor" />
+                  <h2 className="text-xl font-bold text-slate-900">Review</h2>
+                </div>
+                
+                {/* Star Rating */}
+                <div className="flex items-center gap-2 mb-4">
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const rating = parseFloat(order.review.rating);
+                    const isFull = rating >= star;
+                    const isHalf = rating >= star - 0.5 && rating < star;
+                    
+                    return (
+                      <div key={star} className="relative w-6 h-6">
+                        <Star className="absolute w-6 h-6 text-slate-300" fill="currentColor" />
+                        {(isFull || isHalf) && (
+                          <div 
+                            className="absolute overflow-hidden" 
+                            style={{ width: isFull ? '100%' : '50%' }}
+                          >
+                            <Star className="w-6 h-6 text-yellow-400" fill="currentColor" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <span className="ml-2 text-lg font-semibold text-slate-900">
+                    {parseFloat(order.review.rating).toFixed(1)}
+                  </span>
+                </div>
+
+                {/* Review Comment */}
+                {order.review.comment && (
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <p className="text-slate-700 whitespace-pre-wrap">{order.review.comment}</p>
+                  </div>
+                )}
+
+                {/* Review Date */}
+                <p className="text-xs text-slate-500 mt-3">
+                  Reviewed on {new Date(order.review.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -472,11 +529,11 @@ export default function OrderDetailPage() {
                 <h2 className="text-lg font-bold text-slate-900 mb-4">Review Delivery</h2>
                 <div className="space-y-3">
                   <button
-                    onClick={handleCompleteOrder}
+                    onClick={() => setShowReviewModal(true)}
                     className="w-full px-4 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <CheckCircle className="h-5 w-5" />
-                    Accept Delivery
+                    Accept Delivery & Leave Review
                   </button>
                   <button
                     onClick={() => setShowRevisionModal(true)}
@@ -772,6 +829,14 @@ export default function OrderDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Review Modal */}
+      <ReviewModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        onSubmit={handleCompleteOrder}
+        orderDetails={order}
+      />
 
       <Footer />
     </div>
