@@ -1,14 +1,50 @@
 # FiveMarket
 
-A minimal Fiverr-style marketplace built with **React (Vite)**, **Node.js/Express**, and **PostgreSQL**.
-The repo uses **ESM** (`import`/`export`) project-wide.
+A full-featured Fiverr-style freelance marketplace built with **React (Vite)**, **Node.js/Express**, and **PostgreSQL**.
 
-## Tech Stack
+## 🚀 Features
+
+### For Clients
+
+- **Browse & Order Services** - Discover freelance services across multiple categories
+- **Package Selection** - Choose from Basic, Standard, or Premium packages
+- **Add-ons** - Customize orders with optional add-ons
+- **Order Management** - Track orders, request revisions, and accept deliveries
+- **Reviews & Ratings** - Leave detailed reviews with 0.5-star increments
+- **Messaging** - Real-time communication with freelancers
+- **Dispute Resolution** - Open disputes for problematic orders
+- **Profile Management** - Update personal information and change password
+
+### For Freelancers
+
+- **Service Creation** - Create services with multiple packages and add-ons
+- **Portfolio Management** - Upload portfolio images to showcase work
+- **Freelancer Dashboard** - Comprehensive dashboard with:
+  - Overview: Earnings, active orders, ratings, and recent activity
+  - Services: Manage services (pause/activate, edit, delete)
+  - Sales: View and manage all orders with filters
+  - Withdrawals: Request and track withdrawal requests
+- **Order Fulfillment** - Start orders, upload deliverables, handle revisions
+- **Skill Tests** - Take skill certification exams
+- **Earnings Tracking** - Monitor total earned, available balance, and withdrawals
+
+### For Administrators
+
+- **Admin Dashboard** - Platform analytics and management:
+  - Overview: Platform stats, quick actions, recent activity
+  - Analytics: Top earners, popular categories, top rated services
+- **User Management** - View all users, promote users to admin
+- **Order Management** - Monitor all platform transactions
+- **Dispute Resolution** - Review and resolve user disputes (approve/reject)
+- **Platform Insights** - Revenue tracking, user growth, transaction monitoring
+
+## 🛠 Tech Stack
 
 - **Frontend:** Vite + React (JS), Tailwind v4 (`@tailwindcss/vite`)
-- **Backend:** Node 22 (ESM), Express, `pg`, CORS, dotenv, morgan
+- **Backend:** Node 22 (ESM), Express, `pg`, JWT authentication
 - **Database:** PostgreSQL 16 (Docker), plain SQL migrations
 - **Orchestration:** Docker Compose (db + api), **auto-migrate** on container start
+- **File Uploads:** Multer for deliverables and portfolio images
 
 ## Prerequisites
 
@@ -42,44 +78,68 @@ FiveMarket/
 
 ## Environment Variables
 
-- **apps/web/.env**
+### Frontend (`apps/web/.env`)
 
-  VITE_API_URL=[http://localhost:3000](http://localhost:3000)
+```env
+VITE_API_URL=http://localhost:3000
+```
 
-- **apps/api/.env** (optional for local runs; Docker sets env in compose)
+### Backend (`apps/api/.env`)
 
-  PORT=3000 \
-  DATABASE_URL=postgres://fivemarket:fivemarket@localhost:5432/fivemarket \
-  CORS_ORIGIN=[http://localhost:5173](http://localhost:5173) \
-  JWT_SECRET=devsecret \
+```env
+# Server
+PORT=3000
 
-> Do NOT commit `.env` files. Make sure `.env` files are **git-ignored**.
+# Database
+DATABASE_URL=postgres://fivemarket:fivemarket@localhost:5432/fivemarket
+
+# CORS
+CORS_ORIGIN=http://localhost:5173
+
+# Authentication
+JWT_SECRET=your-secret-key-here
+HASHID_SALT=your-hashid-salt-here
+
+# Email (for password reset)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+EMAIL_FROM=FiveMarket <your-email@gmail.com>
+
+# Frontend URL (for email links)
+FRONTEND_URL=http://localhost:5173
+```
+
+> **Note:** Do NOT commit `.env` files. Use `.env.example` for templates.
 
 ## Getting Started
 
-### 1) Install dependencies & create lockfile
+### 1) Install dependencies
 
-```
+```bash
 npm install
 ```
 
-### 2) Start DB + API with Docker (recommended dev flow)
+### 2) Set up environment files
 
-```
+Create `apps/web/.env` and `apps/api/.env` with the variables above.
+
+### 3) Start DB + API with Docker
+
+```bash
 docker compose up --build -d
 # API container auto-runs db/scripts/migrate.js → applies db/migrations/*.sql
 ```
 
-### 3) Start the frontend (Vite)
+### 4) Start the frontend (Vite)
 
-```
-cd apps/web
-# ensure your .env file exists and has VITE_API_URL=http://localhost:3000
+```bash
 npm run dev:web
 # open http://localhost:5173
 ```
 
-You should see the app and an “API health: ok” check.
+You should see the app with seeded data ready to use!
 
 ## Dev Modes (choose one)
 
@@ -127,26 +187,38 @@ You should see the app and an “API health: ok” check.
 
 ## Migrations & Seed
 
-- All DDL/DML lives in `db/migrations/*.sql` (e.g., `00_schema.sql`, `01_seed.sql`, `02_views.sql`).
-- The API container runs:
-
-  ```
-  node /app/db/scripts/migrate.js
-  ```
-
-  on boot to apply any new migrations.
+- All DDL/DML lives in `db/migrations/*.sql`:
+  - `00_schema.sql` - Complete database schema (all tables, indexes, constraints)
+  - `03_seed_data.sql` - Sample data with users, services, and orders
+- The API container runs `node /app/db/scripts/migrate.js` on boot to apply migrations automatically.
 
 - After adding a new `.sql` migration:
-
-  ```
+  ```bash
   docker compose restart api
   ```
 
-- ## or to be safe:
+### Database Schema
 
-  ```
-  docker compose build --no-cache api && docker compose up -d
-  ```
+The database includes tables for:
+
+- **Users & Roles** - `user`, `client`, `freelancer`, `administrator`
+- **Services** - `service`, `package`, `service_addon`, `service_category`
+- **Orders** - `order`, `order_addon`, `deliverable`, `transaction`
+- **Communication** - `conversation`, `message`
+- **Reviews & Disputes** - `review`, `dispute_resolution`, `revision_request`
+- **Freelancer Features** - `withdrawal_request`, `skill_exam`, `certificate`, `portfolio_image`
+
+### Seeded Data
+
+The seed file (`03_seed_data.sql`) includes:
+
+- **22 Users**: 20 freelancers + 2 administrators
+- **Test Credentials**: All seeded users have password `password123`
+- **Sample Services**: Multiple services across different categories
+- **Sample Orders**: Orders in various states for testing
+- **Categories**: Graphics & Design, Digital Marketing, Writing, Video, Programming, etc.
+
+> **Admin Login**: Use userID 21 or 22 from the seed data to access admin features
 
 ## Common Commands
 
