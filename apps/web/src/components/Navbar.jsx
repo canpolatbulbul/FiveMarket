@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import BecomeFreelancerModal from "@/components/BecomeFreelancerModal";
 import { useBecomeFreelancer } from "@/hooks/auth/useBecomeFreelancer";
 import { toast } from "sonner";
-import { Search, Menu, X, ChevronDown, User, Settings, HelpCircle, LogOut, DollarSign, FileText, Briefcase, TrendingUp } from "lucide-react";
+import { Search, Menu, X, ChevronDown, User, Settings, HelpCircle, LogOut, DollarSign, FileText, Briefcase, TrendingUp, ShoppingBag } from "lucide-react";
 
 export default function Navbar() {
   const { user } = useAuth();
@@ -117,9 +117,6 @@ export default function Navbar() {
                     <Link to="/browse" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
                       Browse
                     </Link>
-                    <Link to="/my-orders" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
-                      Orders
-                    </Link>
                     <Link to="/messages" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
                       Messages
                     </Link>
@@ -180,6 +177,15 @@ export default function Navbar() {
                           Profile
                         </Link>
 
+                        <Link
+                          to="/my-orders"
+                          className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <ShoppingBag className="h-4 w-4" />
+                          My Orders
+                        </Link>
+
                         {isFreelancer && (
                           <>
                             <Link
@@ -200,36 +206,8 @@ export default function Navbar() {
                             </Link>
                           </>
                         )}
-
-                        <Link
-                          to="/settings"
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                          onClick={() => setUserMenuOpen(false)}
-                        >
-                          <Settings className="h-4 w-4" />
-                          Settings
-                        </Link>
-
-
-                        <Link
-                          to="/profile"
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                          onClick={() => setUserMenuOpen(false)}
-                        >
-                          <User className="h-4 w-4" />
-                          Profile
-                        </Link>
-
-                        <Link
-                          to="/support"
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                          onClick={() => setUserMenuOpen(false)}
-                        >
-                          <HelpCircle className="h-4 w-4" />
-                          Support
-                        </Link>
-
-                        <div className="border-t border-slate-200 mt-2 pt-2">
+                        
+                        <div className="border-t border-slate-200 pt-2">
                           <Link
                             to="/auth/logout"
                             className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"

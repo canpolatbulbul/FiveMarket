@@ -19,6 +19,10 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  User,
+  Filter,
+  PlayCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Line } from "react-chartjs-2";
@@ -54,11 +58,13 @@ export default function FreelancerDashboard() {
   const [stats, setStats] = useState(null);
   const [services, setServices] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [withdrawalAmount, setWithdrawalAmount] = useState("");
   const [showWithdrawalForm, setShowWithdrawalForm] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ open: false, serviceId: null, serviceName: "" });
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     if (activeTab === "overview") {
@@ -71,6 +77,14 @@ export default function FreelancerDashboard() {
       fetchWithdrawals();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (statusFilter === "all") {
+      setFilteredOrders(orders);
+    } else {
+      setFilteredOrders(orders.filter(order => order.status === statusFilter));
+    }
+  }, [statusFilter, orders]);
 
   const fetchDashboardStats = async () => {
     try {
@@ -106,6 +120,7 @@ export default function FreelancerDashboard() {
       const api = new APICore();
       const response = await api.get("/api/orders/freelancer");
       setOrders(response.data.orders);
+      setFilteredOrders(response.data.orders);
     } catch (error) {
       console.error("Error fetching orders:", error);
       toast.error("Failed to load orders");
@@ -159,6 +174,19 @@ export default function FreelancerDashboard() {
     });
   };
 
+  const handleStartOrder = async (orderId, e) => {
+    e.stopPropagation();
+    try {
+      const api = new APICore();
+      await api.patch(`/api/orders/${orderId}/status`, { status: "in_progress" });
+      toast.success("Order started successfully!");
+      fetchOrders();
+    } catch (error) {
+      console.error("Error starting order:", error);
+      toast.error(error.message || "Failed to start order");
+    }
+  };
+
   const handleWithdrawalRequest = async (e) => {
     e.preventDefault();
     
@@ -188,6 +216,40 @@ export default function FreelancerDashboard() {
 
   const setTab = (tab) => {
     setSearchParams({ tab });
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      in_progress: "bg-blue-100 text-blue-800 border-blue-200",
+      delivered: "bg-purple-100 text-purple-800 border-purple-200",
+      revision_requested: "bg-orange-100 text-orange-800 border-orange-200",
+      completed: "bg-green-100 text-green-800 border-green-200",
+      cancelled: "bg-red-100 text-red-800 border-red-200",
+      disputed: "bg-gray-100 text-gray-800 border-gray-200",
+    };
+    return colors[status] || "bg-gray-100 text-gray-800 border-gray-200";
+  };
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      pending: "Pending",
+      in_progress: "In Progress",
+      delivered: "Delivered",
+      revision_requested: "Revision Requested",
+      completed: "Completed",
+      cancelled: "Cancelled",
+      disputed: "Disputed",
+    };
+    return labels[status] || status;
+  };
+
+  const statusCounts = {
+    all: orders.length,
+    pending: orders.filter(o => o.status === "pending").length,
+    in_progress: orders.filter(o => o.status === "in_progress").length,
+    delivered: orders.filter(o => o.status === "delivered").length,
+    completed: orders.filter(o => o.status === "completed").length,
   };
 
   // Chart data for earnings
@@ -449,7 +511,7 @@ export default function FreelancerDashboard() {
             <div className="flex items-center justify-between">
               <p className="text-slate-600">{services.length} services</p>
               <Link
-                to="/services/add"
+                to="/services/create"
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
               >
                 <Plus className="h-4 w-4" />
@@ -463,7 +525,7 @@ export default function FreelancerDashboard() {
                 <h3 className="text-lg font-semibold text-slate-900 mb-2">No services yet</h3>
                 <p className="text-slate-600 mb-4">Create your first service to start earning</p>
                 <Link
-                  to="/services/add"
+                  to="/services/create"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                 >
                   <Plus className="h-5 w-5" />
@@ -471,66 +533,111 @@ export default function FreelancerDashboard() {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {services.map((service) => (
-                  <div key={service.service_id} className="bg-white rounded-xl border border-slate-200 p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-bold text-slate-900">{service.title}</h3>
-                          {service.is_active ? (
-                            <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                              Active
-                            </span>
-                          ) : (
-                            <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium">
-                              Paused
-                            </span>
-                          )}
+                  <Link
+                    key={service.service_id}
+                    to={`/service/${service.service_id}`}
+                    className="bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col"
+                  >
+                    {/* Image */}
+                    <div className="relative h-48 bg-gradient-to-br from-blue-100 via-cyan-50 to-indigo-100 overflow-hidden">
+                      {service.portfolio_image ? (
+                        <img
+                          src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${service.portfolio_image}`}
+                          alt={service.title}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-5xl">
+                          💼
                         </div>
-                        <p className="text-slate-600 text-sm mb-4 line-clamp-2">{service.description}</p>
-                        <div className="flex items-center gap-6 text-sm text-slate-600">
-                          <span className="flex items-center gap-1">
-                            <DollarSign className="h-4 w-4" />
-                            From ${service.starting_price}
+                      )}
+                      {/* Status Badge */}
+                      <div className="absolute top-3 right-3">
+                        {service.is_active ? (
+                          <span className="px-3 py-1 bg-green-500 text-white rounded-full text-xs font-medium shadow-lg">
+                            Active
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Package className="h-4 w-4" />
-                            {service.package_count} packages
+                        ) : (
+                          <span className="px-3 py-1 bg-slate-500 text-white rounded-full text-xs font-medium shadow-lg">
+                            Paused
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-400" fill="currentColor" />
-                            {service.avg_rating} ({service.review_count})
-                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-5 flex flex-col flex-1">
+                      <h3 className="font-semibold text-lg text-slate-900 mb-2 line-clamp-2 min-h-[3.5rem]">
+                        {service.title}
+                      </h3>
+
+                      {/* Stats */}
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Package className="h-4 w-4 text-indigo-600" />
+                          <span className="text-slate-600">{service.package_count} packages</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <DollarSign className="h-4 w-4 text-green-600" />
+                          <span className="text-slate-600">${service.starting_price}+</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <ShoppingBag className="h-4 w-4 text-blue-600" />
+                          <span className="text-slate-600">{service.total_orders} orders</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                          <span className="text-slate-600">{service.avg_rating} ({service.review_count})</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 ml-4">
+
+                      {/* Actions */}
+                      <div className="flex gap-2 mt-auto pt-4 border-t border-slate-100">
                         <button
-                          onClick={() => handleToggleServiceStatus(service.service_id, service.is_active)}
-                          className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleToggleServiceStatus(service.service_id, service.is_active);
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-700 px-4 py-2 rounded-lg font-medium transition-colors"
                           title={service.is_active ? "Pause service" : "Activate service"}
                         >
                           {service.is_active ? (
-                            <Pause className="h-5 w-5" />
+                            <>
+                              <Pause className="h-4 w-4" />
+                              Pause
+                            </>
                           ) : (
-                            <Play className="h-5 w-5" />
+                            <>
+                              <Play className="h-4 w-4" />
+                              Activate
+                            </>
                           )}
                         </button>
-                        <Link
-                          to={`/services/edit/${service.service_id}`}
-                          className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                        >
-                          <Edit2 className="h-5 w-5" />
-                        </Link>
                         <button
-                          onClick={() => openDeleteModal(service)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate(`/services/edit/${service.service_id}`);
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg font-medium transition-colors"
                         >
-                          <Trash2 className="h-5 w-5" />
+                          <Edit2 className="h-4 w-4" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            openDeleteModal(service);
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-700 px-4 py-2 rounded-lg font-medium transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
                         </button>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
@@ -539,51 +646,145 @@ export default function FreelancerDashboard() {
 
         {activeTab === "sales" && (
           <div className="space-y-6">
-            <p className="text-slate-600">{orders.length} orders</p>
+            {/* Header with View Disputes Button */}
+            <div className="flex items-center justify-between">
+              <p className="text-slate-600">{orders.length} orders</p>
+              <button
+                onClick={() => navigate("/disputes")}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2"
+              >
+                <AlertTriangle className="h-5 w-5" />
+                View Disputes
+              </button>
+            </div>
 
-            {orders.length === 0 ? (
+            {/* Status Filter */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2">
+              <Filter className="h-5 w-5 text-slate-400 flex-shrink-0" />
+              {[
+                { key: "all", label: "All Orders" },
+                { key: "pending", label: "Pending" },
+                { key: "in_progress", label: "In Progress" },
+                { key: "delivered", label: "Delivered" },
+                { key: "completed", label: "Completed" },
+              ].map((filter) => (
+                <button
+                  key={filter.key}
+                  onClick={() => setStatusFilter(filter.key)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                    statusFilter === filter.key
+                      ? "bg-indigo-600 text-white shadow-md"
+                      : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200"
+                  }`}
+                >
+                  {filter.label}
+                  {statusCounts[filter.key] > 0 && (
+                    <span className="ml-2 text-sm opacity-75">
+                      ({statusCounts[filter.key]})
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Orders List */}
+            {filteredOrders.length === 0 ? (
               <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
                 <ShoppingBag className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">No orders yet</h3>
-                <p className="text-slate-600">Your orders will appear here</p>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                  {statusFilter === "all" ? "No orders yet" : `No ${getStatusLabel(statusFilter).toLowerCase()} orders`}
+                </h3>
+                <p className="text-slate-600">
+                  {statusFilter === "all" 
+                    ? "Orders for your services will appear here"
+                    : "Try selecting a different filter"}
+                </p>
               </div>
             ) : (
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-slate-50 border-b border-slate-200">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Order</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Service</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Client</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Amount</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {orders.map((order) => (
-                        <tr key={order.order_id} className="hover:bg-slate-50">
-                          <td className="px-6 py-4 text-sm font-medium text-slate-900">#{order.order_id}</td>
-                          <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">{order.service_title}</td>
-                          <td className="px-6 py-4 text-sm text-slate-600">{order.client_name}</td>
-                          <td className="px-6 py-4">{getStatusBadge(order.status)}</td>
-                          <td className="px-6 py-4 text-sm font-semibold text-slate-900 text-right">
-                            ${order.total_price}
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <Link
-                              to={`/orders/${order.order_id}`}
-                              className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+              <div className="grid gap-4">
+                {filteredOrders.map((order) => (
+                  <div
+                    key={order.order_id}
+                    onClick={() => navigate(`/orders/${order.order_id}`)}
+                    className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-all cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-semibold text-slate-900">
+                            {order.service_title}
+                          </h3>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                              order.status
+                            )}`}
+                          >
+                            {getStatusLabel(order.status)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-600 mb-3">
+                          {order.package_name} Package
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-green-600">
+                          ${order.total_price}
+                        </p>
+                        <p className="text-xs text-slate-500">Order #{order.order_id}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <User className="h-4 w-4 text-slate-400" />
+                        <span>
+                          {order.client_name || `${order.client_first_name} ${order.client_last_name}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <Clock className="h-4 w-4 text-slate-400" />
+                        <span>
+                          Due: {new Date(order.due_time).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <Package className="h-4 w-4 text-slate-400" />
+                        <span>
+                          {order.revisions_used}/{order.revisions_allowed} revisions used
+                        </span>
+                      </div>
+                    </div>
+
+                    {order.addons && order.addons.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-slate-100">
+                        <p className="text-xs text-slate-500 mb-1">Add-ons:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {order.addons.map((addon, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs"
                             >
-                              View Details
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                              {addon.name} x{addon.quantity}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    {order.status === "pending" && (
+                      <div className="mt-4 pt-4 border-t border-slate-100">
+                        <button
+                          onClick={(e) => handleStartOrder(order.order_id, e)}
+                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                        >
+                          <PlayCircle className="h-4 w-4" />
+                          Start Order
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>

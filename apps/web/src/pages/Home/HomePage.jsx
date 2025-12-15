@@ -74,14 +74,14 @@ export default function HomePage() {
           title: "My Sales",
           description: "View and manage your orders",
           icon: Briefcase,
-          link: "/my-sales",
+          link: "/freelancer/dashboard?tab=sales",
           color: "from-indigo-500 to-purple-600",
         },
         {
           title: "Manage Services",
           description: "Edit and optimize your listings",
           icon: ShoppingBag,
-          link: "/my-services",
+          link: "/freelancer/dashboard?tab=services",
           color: "from-blue-500 to-cyan-600",
         },
         {

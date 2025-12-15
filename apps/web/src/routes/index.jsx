@@ -11,10 +11,8 @@ const BrowsePage = lazy(() => import("../pages/Browse/BrowsePage.jsx"));
 const ServiceDetailPage = lazy(() => import("../pages/Service/ServiceDetailPage.jsx"));
 const AddServicePage = lazy(() => import("../pages/Service/AddServicePage.jsx"));
 const EditServicePage = lazy(() => import("../pages/Service/EditServicePage.jsx"));
-const MyServicesPage = lazy(() => import("../pages/Service/MyServicesPage.jsx"));
 const OrderServicePage = lazy(() => import("../pages/Order/OrderServicePage.jsx"));
 const ClientOrdersPage = lazy(() => import("../pages/Order/ClientOrdersPage.jsx"));
-const FreelancerOrdersPage = lazy(() => import("../pages/Order/FreelancerOrdersPage.jsx"));
 const OrderDetailPage = lazy(() => import("../pages/Order/OrderDetailPage.jsx"));
 const MessagesPage = lazy(() => import("../pages/Messages/MessagesPage.jsx"));
 const ConversationPage = lazy(() => import("../pages/Messages/ConversationPage.jsx"));
@@ -53,88 +51,117 @@ const AllRoutes = () => {
             element: <ProtectedRoute><LoadComponent component={BrowsePage} /></ProtectedRoute>
         },
         {
-            path: "/service/:id",
-            element: <ProtectedRoute><LoadComponent component={ServiceDetailPage} /></ProtectedRoute>
+            path: "/profile",
+            element: <ProtectedRoute><LoadComponent component={ProfilePage} /></ProtectedRoute>
+        },
+        // Service routes
+        {
+            path: "/service",
+            children: [
+                {
+                    path: ":id",
+                    element: <ProtectedRoute><LoadComponent component={ServiceDetailPage} /></ProtectedRoute>
+                },
+                {
+                    path: ":serviceId/order",
+                    element: <ProtectedRoute><LoadComponent component={OrderServicePage} /></ProtectedRoute>
+                }
+            ]
         },
         {
-            path: "/service/:serviceId/order",
-            element: <ProtectedRoute><LoadComponent component={OrderServicePage} /></ProtectedRoute>
+            path: "/services",
+            children: [
+                {
+                    path: "create",
+                    element: <ProtectedRoute><LoadComponent component={AddServicePage} /></ProtectedRoute>
+                },
+                {
+                    path: "edit/:id",
+                    element: <ProtectedRoute><LoadComponent component={EditServicePage} /></ProtectedRoute>
+                }
+            ]
+        },
+        // Order routes
+        {
+            path: "/orders",
+            children: [
+                {
+                    path: ":id",
+                    element: <ProtectedRoute><LoadComponent component={OrderDetailPage} /></ProtectedRoute>
+                }
+            ]
         },
         {
             path: "/my-orders",
             element: <ProtectedRoute requiredRole={Roles.CLIENT}><LoadComponent component={ClientOrdersPage} /></ProtectedRoute>
         },
-        {
-            path: "/my-sales",
-            element: <ProtectedRoute requiredRole={Roles.FREELANCER}><LoadComponent component={FreelancerOrdersPage} /></ProtectedRoute>
-        },
-        {
-            path: "/orders/:id",
-            element: <ProtectedRoute><LoadComponent component={OrderDetailPage} /></ProtectedRoute>
-        },
+        // Message routes
         {
             path: "/messages",
-            element: <ProtectedRoute><LoadComponent component={MessagesPage} /></ProtectedRoute>
-        },
-        {
-            path: "/messages/:id",
-            element: <ProtectedRoute><LoadComponent component={ConversationPage} /></ProtectedRoute>
-        },
-        {
-            path: "/disputes",
-            element: <ProtectedRoute><LoadComponent component={DisputesPage} /></ProtectedRoute>
-        },
-        {
-            path: "/disputes/:id",
-            element: <ProtectedRoute><LoadComponent component={DisputeDetailPage} /></ProtectedRoute>
-        },
-        {
-            path: "/admin/disputes",
-            element: <ProtectedRoute><LoadComponent component={AdminDisputesPage} /></ProtectedRoute>
-        },
-        {
-            path: "/admin/orders",
-            element: <ProtectedRoute><LoadComponent component={AdminOrdersPage} /></ProtectedRoute>
-        },
-        {
-            path: "/admin/users",
-            element: <ProtectedRoute><LoadComponent component={AdminUsersPage} /></ProtectedRoute>
-        },
-        {
-            path: "/my-services",
-            element: <ProtectedRoute><LoadComponent component={MyServicesPage} /></ProtectedRoute>
-        },
-        {
-            path: "/services/create",
-            element: <ProtectedRoute><LoadComponent component={AddServicePage} /></ProtectedRoute>
-        },
-        {
-            path: "/services/edit/:id",
-            element: <ProtectedRoute><LoadComponent component={EditServicePage} /></ProtectedRoute>
-        },
-        {
-            path:"/profile",
-            element: <ProtectedRoute><LoadComponent component={ProfilePage} /></ProtectedRoute>
-        },
-        {
-            path:"/freelancer/dashboard",
-            element: <ProtectedRoute requiredRole={Roles.FREELANCER}><LoadComponent component={FreelancerDashboard} /></ProtectedRoute>
-        },
-        {
-            path: "/auth",
-            children:[
-                {path:"register",element: <LoadComponent component={Register} />},
-                {path:"login",element: <LoadComponent component={Login} />},
-                {path:"forgot-password",element: <LoadComponent component={ForgotPassword} />},
-                {path:"reset-password",element: <LoadComponent component={ResetPassword} />},
-                {path:"logout",element: <ProtectedRoute><LoadComponent component={Logout} /></ProtectedRoute>}
+            children: [
+                {
+                    index: true,
+                    element: <ProtectedRoute><LoadComponent component={MessagesPage} /></ProtectedRoute>
+                },
+                {
+                    path: ":id",
+                    element: <ProtectedRoute><LoadComponent component={ConversationPage} /></ProtectedRoute>
+                }
             ]
         },
+        // Dispute routes
+        {
+            path: "/disputes",
+            children: [
+                {
+                    index: true,
+                    element: <ProtectedRoute><LoadComponent component={DisputesPage} /></ProtectedRoute>
+                },
+                {
+                    path: ":id",
+                    element: <ProtectedRoute><LoadComponent component={DisputeDetailPage} /></ProtectedRoute>
+                }
+            ]
+        },
+        // Admin routes
+        {
+            path: "/admin",
+            children: [
+                {
+                    path: "disputes",
+                    element: <ProtectedRoute><LoadComponent component={AdminDisputesPage} /></ProtectedRoute>
+                },
+                {
+                    path: "orders",
+                    element: <ProtectedRoute><LoadComponent component={AdminOrdersPage} /></ProtectedRoute>
+                },
+                { path: "users", element: <ProtectedRoute><LoadComponent component={AdminUsersPage} /></ProtectedRoute>}
+            ]
+        },
+        // Freelancer routes
+        {
+            path: "/freelancer",
+            children: [
+                { path: "dashboard", element: <ProtectedRoute requiredRole={Roles.FREELANCER}><LoadComponent component={FreelancerDashboard} /></ProtectedRoute>}
+            ]
+        },
+        // Auth routes
+        {
+            path: "/auth",
+            children: [
+                { path: "register", element: <LoadComponent component={Register} /> },
+                { path: "login", element: <LoadComponent component={Login} /> },
+                { path: "forgot-password", element: <LoadComponent component={ForgotPassword} /> },
+                { path: "reset-password", element: <LoadComponent component={ResetPassword} /> },
+                { path: "logout", element: <ProtectedRoute><LoadComponent component={Logout} /></ProtectedRoute> }
+            ]
+        },
+        // Legal routes
         {
             path: "/legal",
-            children:[
-                {path:"terms",element: <LoadComponent component={TermsAndConditions} />},
-                {path:"privacy",element: <LoadComponent component={PrivacyPolicy} />}
+            children: [
+                { path: "terms", element: <LoadComponent component={TermsAndConditions} /> },
+                { path: "privacy", element: <LoadComponent component={PrivacyPolicy} /> }
             ]
         },
         {
