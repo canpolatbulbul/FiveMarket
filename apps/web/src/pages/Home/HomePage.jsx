@@ -228,32 +228,79 @@ export default function HomePage() {
 
             {/* Statistics Sections */}
             {!loading && adminStats && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                {/* Top Earners */}
+              <div className="mb-12">
+                {/* Top Earners - Full Width Table */}
                 <div className="bg-white rounded-xl border border-slate-200 p-6">
                   <h3 className="text-xl font-bold text-slate-900 mb-4">🏆 Top Earners</h3>
-                  <div className="space-y-3">
-                    {adminStats.topEarners?.length > 0 ? (
-                      adminStats.topEarners.map((earner, index) => (
-                        <div key={earner.userID} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 font-bold text-sm">
-                              #{index + 1}
-                            </div>
-                            <div>
-                              <p className="font-semibold text-slate-900">{earner.name}</p>
-                              <p className="text-xs text-slate-500">{earner.totalOrders} orders</p>
-                            </div>
-                          </div>
-                          <span className="font-bold text-green-600">${earner.totalEarned.toFixed(2)}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-slate-500 text-center py-4">No earnings data yet</p>
-                    )}
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Rank</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Freelancer</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Member Since</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Total Earned</th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">Orders</th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">Rating</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {adminStats.topEarners?.length > 0 ? (
+                          adminStats.topEarners.map((earner, index) => (
+                            <tr key={earner.userID} className="hover:bg-slate-50">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 font-bold text-sm">
+                                  #{index + 1}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <p className="font-semibold text-slate-900">{earner.name}</p>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-slate-600">
+                                {earner.memberSince ? new Date(earner.memberSince).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                }) : 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <span className="font-bold text-green-600">${earner.totalEarned.toFixed(2)}</span>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                                  {earner.totalOrders}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                {earner.reviewCount && earner.reviewCount > 0 ? (
+                                  <div className="flex items-center justify-center gap-1">
+                                    <Star className="h-4 w-4 text-yellow-400" fill="currentColor" />
+                                    <span className="font-semibold text-slate-900">{earner.avgRating}</span>
+                                    <span className="text-xs text-slate-500">({earner.reviewCount})</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 text-sm">No reviews</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="6" className="px-4 py-8 text-center text-slate-500">
+                              No earnings data yet
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
+              </div>
+            )}
 
+            {/* Popular Categories and Top Rated Services */}
+            {!loading && adminStats && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
                 {/* Popular Categories */}
                 <div className="bg-white rounded-xl border border-slate-200 p-6">
                   <h3 className="text-xl font-bold text-slate-900 mb-4">📊 Popular Categories</h3>
@@ -270,6 +317,37 @@ export default function HomePage() {
                       ))
                     ) : (
                       <p className="text-slate-500 text-center py-4">No category data yet</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Top Rated Services */}
+                <div className="bg-white rounded-xl border border-slate-200 p-6">
+                  <h3 className="text-xl font-bold text-slate-900 mb-4">⭐ Top Rated Services</h3>
+                  <div className="space-y-3">
+                    {adminStats.topRatedServices?.length > 0 ? (
+                      adminStats.topRatedServices.map((service, index) => (
+                        <div key={service.serviceId} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 font-bold text-sm">
+                              #{index + 1}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-900">{service.title}</p>
+                              <p className="text-xs text-slate-500">by {service.freelancerName}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4 text-yellow-400" fill="currentColor" />
+                              <span className="font-bold text-yellow-600">{service.avgRating}</span>
+                            </div>
+                            <p className="text-xs text-slate-500">{service.reviewCount} reviews</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-slate-500 text-center py-4">No reviews yet</p>
                     )}
                   </div>
                 </div>

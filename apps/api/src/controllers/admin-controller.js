@@ -13,14 +13,18 @@ export const getDashboardStats = async (req, res) => {
         f."userID",
         u.first_name,
         u.last_name,
+        u.created_at as member_since,
         f.total_earned,
-        COUNT(DISTINCT o.order_id) as total_orders
+        COUNT(DISTINCT o.order_id) as total_orders,
+        COALESCE(AVG(r.rating), 0) as avg_rating,
+        COUNT(DISTINCT r.review_id) as review_count
       FROM freelancer f
       JOIN "user" u ON f."userID" = u."userID"
       LEFT JOIN service s ON s.freelancer_id = f."userID"
       LEFT JOIN package p ON p.service_id = s.service_id
       LEFT JOIN "order" o ON o.package_id = p.package_id AND o.status = 'completed'
-      GROUP BY f."userID", u.first_name, u.last_name, f.total_earned
+      LEFT JOIN review r ON r.order_id = o.order_id
+      GROUP BY f."userID", u.first_name, u.last_name, u.created_at, f.total_earned
       ORDER BY f.total_earned DESC
       LIMIT 5
     `);
@@ -39,6 +43,26 @@ export const getDashboardStats = async (req, res) => {
       LEFT JOIN "order" o ON o.package_id = p.package_id
       GROUP BY sc.category_id, sc.description
       ORDER BY order_count DESC
+      LIMIT 5
+    `);
+
+    // Top Rated Services (by average rating)
+    const topRatedServicesResult = await query(`
+      SELECT 
+        s.service_id,
+        s.title,
+        u.first_name,
+        u.last_name,
+        AVG(r.rating) as avg_rating,
+        COUNT(r.review_id) as review_count
+      FROM service s
+      JOIN "user" u ON s.freelancer_id = u."userID"
+      JOIN package p ON p.service_id = s.service_id
+      JOIN "order" o ON o.package_id = p.package_id
+      JOIN review r ON r.order_id = o.order_id
+      GROUP BY s.service_id, s.title, u.first_name, u.last_name
+      HAVING COUNT(r.review_id) >= 1
+      ORDER BY avg_rating DESC, review_count DESC
       LIMIT 5
     `);
 
@@ -106,14 +130,24 @@ export const getDashboardStats = async (req, res) => {
         topEarners: topEarnersResult.rows.map((earner) => ({
           userID: encodeUserID(earner.userID),
           name: `${earner.first_name} ${earner.last_name}`,
+          memberSince: earner.member_since,
           totalEarned: parseFloat(earner.total_earned) || 0,
           totalOrders: parseInt(earner.total_orders) || 0,
+          avgRating: parseFloat(earner.avg_rating).toFixed(1),
+          reviewCount: parseInt(earner.review_count) || 0,
         })),
         popularCategories: popularCategoriesResult.rows.map((cat) => ({
           categoryId: cat.category_id,
           name: cat.description,
           orderCount: parseInt(cat.order_count) || 0,
           totalRevenue: parseFloat(cat.total_revenue) || 0,
+        })),
+        topRatedServices: topRatedServicesResult.rows.map((service) => ({
+          serviceId: service.service_id,
+          title: service.title,
+          freelancerName: `${service.first_name} ${service.last_name}`,
+          avgRating: parseFloat(service.avg_rating).toFixed(1),
+          reviewCount: parseInt(service.review_count),
         })),
         recentActivity: recentActivityResult.rows.map((activity) => ({
           orderId: activity.order_id,

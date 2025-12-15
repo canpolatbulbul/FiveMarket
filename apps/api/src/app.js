@@ -13,6 +13,7 @@ import messagesRouter from "./routers/messages-router.js";
 import disputesRouter from "./routers/disputes-router.js";
 import usersRouter from "./routers/users-router.js";
 import adminRouter from "./routers/admin-router.js";
+import { errorHandler } from "./middleware/error-handler.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,5 +54,8 @@ app.use("/api/messages", messagesRouter);
 app.use("/api/disputes", disputesRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/admin", adminRouter);
+
+// Global error handler (must be last)
+app.use(errorHandler);
 
 export default app;
