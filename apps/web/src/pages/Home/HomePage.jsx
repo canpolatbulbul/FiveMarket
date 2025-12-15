@@ -47,6 +47,13 @@ export default function HomePage() {
   const quickActions = isAdmin
     ? [
         {
+          title: "Analytics Dashboard",
+          description: "View platform analytics, reports, and management tools",
+          icon: TrendingUp,
+          link: "/admin/dashboard",
+          color: "from-indigo-500 to-purple-600",
+        },
+        {
           title: "All Disputes",
           description: "Review and resolve user disputes",
           icon: AlertCircle,
@@ -131,80 +138,24 @@ export default function HomePage() {
       {!isAdmin && <CategoryNav />}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Admin Dashboard */}
+        {/* Admin Homepage */}
         {isAdmin ? (
           <>
             {/* Welcome Header */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <Shield className="h-10 w-10 text-purple-600" />
-                <h1 className="text-4xl font-bold text-slate-900">Admin Dashboard</h1>
+                <h1 className="text-4xl font-bold text-slate-900">Admin Portal</h1>
               </div>
               <p className="text-lg text-slate-600">
-                Welcome back, {user?.first_name}! Here's what's happening on the platform.
+                Welcome back, {user?.first_name}! Manage your platform from here.
               </p>
             </div>
-
-            {/* Stats Grid */}
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                <p className="mt-4 text-slate-600">Loading dashboard...</p>
-              </div>
-            ) : adminStats && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-purple-100 rounded-lg">
-                      <Users className="h-6 w-6 text-purple-600" />
-                    </div>
-                    <span className="text-2xl font-bold text-slate-900">{adminStats.totals?.users || 0}</span>
-                  </div>
-                  <h3 className="text-sm font-medium text-slate-600">Total Users</h3>
-                  <p className="text-xs text-slate-500 mt-1">+{adminStats.userGrowth?.newUsersThisMonth || 0} this month</p>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-blue-100 rounded-lg">
-                      <Package className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <span className="text-2xl font-bold text-slate-900">{adminStats.totals?.orders || 0}</span>
-                  </div>
-                  <h3 className="text-sm font-medium text-slate-600">Total Orders</h3>
-                  <p className="text-xs text-slate-500 mt-1">${adminStats.revenue?.completedRevenue?.toFixed(2) || 0} completed</p>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-red-100 rounded-lg">
-                      <AlertCircle className="h-6 w-6 text-red-600" />
-                    </div>
-                    <span className="text-2xl font-bold text-slate-900">{adminStats.totals?.activeDisputes || 0}</span>
-                  </div>
-                  <h3 className="text-sm font-medium text-slate-600">Active Disputes</h3>
-                  <Link to="/admin/disputes" className="text-sm text-indigo-600 hover:text-indigo-700 mt-2 inline-flex items-center gap-1">
-                    Review <ArrowRight className="h-3 w-3" />
-                  </Link>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-green-100 rounded-lg">
-                      <ShoppingBag className="h-6 w-6 text-green-600" />
-                    </div>
-                    <span className="text-2xl font-bold text-slate-900">${adminStats.revenue?.pendingRevenue?.toFixed(2) || 0}</span>
-                  </div>
-                  <h3 className="text-sm font-medium text-slate-600">Pending Revenue</h3>
-                  <p className="text-xs text-slate-500 mt-1">{adminStats.revenue?.totalTransactions || 0} transactions</p>
-                </div>
-              </div>
-            )}
 
             {/* Quick Actions */}
             <div className="mb-12">
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Quick Actions</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {quickActions.map((action, index) => (
                   <Link
                     key={index}
@@ -225,176 +176,6 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
-
-            {/* Statistics Sections */}
-            {!loading && adminStats && (
-              <div className="mb-12">
-                {/* Top Earners - Full Width Table */}
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <h3 className="text-xl font-bold text-slate-900 mb-4">🏆 Top Earners</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-slate-50 border-b border-slate-200">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Rank</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Freelancer</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Member Since</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Total Earned</th>
-                          <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">Orders</th>
-                          <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">Rating</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {adminStats.topEarners?.length > 0 ? (
-                          adminStats.topEarners.map((earner, index) => (
-                            <tr key={earner.userID} className="hover:bg-slate-50">
-                              <td className="px-4 py-3">
-                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 font-bold text-sm">
-                                  #{index + 1}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                <p className="font-semibold text-slate-900">{earner.name}</p>
-                              </td>
-                              <td className="px-4 py-3 text-sm text-slate-600">
-                                {earner.memberSince ? new Date(earner.memberSince).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric'
-                                }) : 'N/A'}
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                <span className="font-bold text-green-600">${earner.totalEarned.toFixed(2)}</span>
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                                  {earner.totalOrders}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                {earner.reviewCount && earner.reviewCount > 0 ? (
-                                  <div className="flex items-center justify-center gap-1">
-                                    <Star className="h-4 w-4 text-yellow-400" fill="currentColor" />
-                                    <span className="font-semibold text-slate-900">{earner.avgRating}</span>
-                                    <span className="text-xs text-slate-500">({earner.reviewCount})</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-slate-400 text-sm">No reviews</span>
-                                )}
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan="6" className="px-4 py-8 text-center text-slate-500">
-                              No earnings data yet
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Popular Categories and Top Rated Services */}
-            {!loading && adminStats && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                {/* Popular Categories */}
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <h3 className="text-xl font-bold text-slate-900 mb-4">📊 Popular Categories</h3>
-                  <div className="space-y-3">
-                    {adminStats.popularCategories?.length > 0 ? (
-                      adminStats.popularCategories.map((category) => (
-                        <div key={category.categoryId} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                          <div>
-                            <p className="font-semibold text-slate-900">{category.name}</p>
-                            <p className="text-xs text-slate-500">{category.orderCount} orders</p>
-                          </div>
-                          <span className="font-bold text-indigo-600">${category.totalRevenue.toFixed(2)}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-slate-500 text-center py-4">No category data yet</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Top Rated Services */}
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <h3 className="text-xl font-bold text-slate-900 mb-4">⭐ Top Rated Services</h3>
-                  <div className="space-y-3">
-                    {adminStats.topRatedServices?.length > 0 ? (
-                      adminStats.topRatedServices.map((service, index) => (
-                        <div key={service.serviceId} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 font-bold text-sm">
-                              #{index + 1}
-                            </div>
-                            <div>
-                              <p className="font-semibold text-slate-900">{service.title}</p>
-                              <p className="text-xs text-slate-500">by {service.freelancerName}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 text-yellow-400" fill="currentColor" />
-                              <span className="font-bold text-yellow-600">{service.avgRating}</span>
-                            </div>
-                            <p className="text-xs text-slate-500">{service.reviewCount} reviews</p>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-slate-500 text-center py-4">No reviews yet</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Recent Activity */}
-            {!loading && adminStats && adminStats.recentActivity?.length > 0 && (
-              <div className="bg-white rounded-xl border border-slate-200 p-6 mb-12">
-                <h3 className="text-xl font-bold text-slate-900 mb-4">⚡ Recent Activity</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-slate-50 border-b border-slate-200">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Order</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Service</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Client → Freelancer</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {adminStats.recentActivity.map((activity) => (
-                        <tr key={activity.orderId} className="hover:bg-slate-50">
-                          <td className="px-4 py-3 text-sm font-medium text-slate-900">#{activity.orderId}</td>
-                          <td className="px-4 py-3 text-sm text-slate-600 max-w-xs truncate">{activity.serviceTitle}</td>
-                          <td className="px-4 py-3 text-sm text-slate-600">
-                            {activity.clientName} → {activity.freelancerName}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              activity.status === 'completed' ? 'bg-green-100 text-green-700' :
-                              activity.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                              activity.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-slate-100 text-slate-700'
-                            }`}>
-                              {activity.status.replace('_', ' ')}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm font-bold text-slate-900 text-right">${activity.totalPrice.toFixed(2)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
           </>
         ) : (
           <>

@@ -30,6 +30,7 @@ const PrivacyPolicy = lazy(() => import("../pages/Legal/PrivacyPolicy.jsx"));
 const Logout = lazy(() => import("../pages/Auth/Logout.jsx"));
 const ProfilePage = lazy(() => import("../pages/Profile/ProfilePage.jsx"));
 const FreelancerDashboard = lazy(() => import("../pages/Freelancer/FreelancerDashboard.jsx"));
+const AdminDashboard = lazy(() => import("../pages/Admin/AdminDashboard.jsx"));
 const ForbiddenPage = lazy(() => import("../pages/Error/ForbiddenPage.jsx"));
 
 const LoadComponent = ({component: Component}) => (
@@ -127,6 +128,7 @@ const AllRoutes = () => {
         {
             path: "/admin",
             children: [
+                { path: "dashboard", element: <ProtectedRoute requiredRole={Roles.ADMIN}><LoadComponent component={AdminDashboard} /></ProtectedRoute>},
                 {
                     path: "disputes",
                     element: <ProtectedRoute><LoadComponent component={AdminDisputesPage} /></ProtectedRoute>

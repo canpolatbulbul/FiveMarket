@@ -98,17 +98,11 @@ export default function Navbar() {
                 {/* Admin Navigation */}
                 {isAdmin ? (
                   <>
-                    <Link to="/" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                    <Link to="/browse" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                      Browse
+                    </Link>
+                    <Link to="/admin/dashboard" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
                       Dashboard
-                    </Link>
-                    <Link to="/admin/users" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
-                      Users
-                    </Link>
-                    <Link to="/admin/disputes" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
-                      Disputes
-                    </Link>
-                    <Link to="/admin/orders" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
-                      Orders
                     </Link>
                   </>
                 ) : (
@@ -177,16 +171,18 @@ export default function Navbar() {
                           Profile
                         </Link>
 
-                        <Link
-                          to="/my-orders"
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                          onClick={() => setUserMenuOpen(false)}
-                        >
-                          <ShoppingBag className="h-4 w-4" />
-                          My Orders
-                        </Link>
+                        {!isAdmin && (
+                          <Link
+                            to="/my-orders"
+                            className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                            onClick={() => setUserMenuOpen(false)}
+                          >
+                            <ShoppingBag className="h-4 w-4" />
+                            My Orders
+                          </Link>
+                        )}
 
-                        {isFreelancer && (
+                        {isFreelancer && !isAdmin && (
                           <>
                             <Link
                               to="/freelancer/dashboard"
