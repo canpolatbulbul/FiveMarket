@@ -31,6 +31,7 @@ const TermsAndConditions = lazy(() => import("../pages/Legal/TermsAndConditions.
 const PrivacyPolicy = lazy(() => import("../pages/Legal/PrivacyPolicy.jsx"));
 const Logout = lazy(() => import("../pages/Auth/Logout.jsx"));
 const ProfilePage = lazy(() => import("../pages/Profile/ProfilePage.jsx"));
+const FreelancerDashboard = lazy(() => import("../pages/Freelancer/FreelancerDashboard.jsx"));
 const ForbiddenPage = lazy(() => import("../pages/Error/ForbiddenPage.jsx"));
 
 const LoadComponent = ({component: Component}) => (
@@ -114,6 +115,10 @@ const AllRoutes = () => {
         {
             path:"/profile",
             element: <ProtectedRoute><LoadComponent component={ProfilePage} /></ProtectedRoute>
+        },
+        {
+            path:"/freelancer/dashboard",
+            element: <ProtectedRoute requiredRole={Roles.FREELANCER}><LoadComponent component={FreelancerDashboard} /></ProtectedRoute>
         },
         {
             path: "/auth",

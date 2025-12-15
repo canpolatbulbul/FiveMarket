@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import BecomeFreelancerModal from "@/components/BecomeFreelancerModal";
 import { useBecomeFreelancer } from "@/hooks/auth/useBecomeFreelancer";
 import { toast } from "sonner";
-import { Search, Menu, X, ChevronDown, User, Settings, HelpCircle, LogOut, DollarSign, FileText, Briefcase } from "lucide-react";
+import { Search, Menu, X, ChevronDown, User, Settings, HelpCircle, LogOut, DollarSign, FileText, Briefcase, TrendingUp } from "lucide-react";
 
 export default function Navbar() {
   const { user } = useAuth();
@@ -183,20 +183,12 @@ export default function Navbar() {
                         {isFreelancer && (
                           <>
                             <Link
-                              to="/my-services"
+                              to="/freelancer/dashboard"
                               className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                               onClick={() => setUserMenuOpen(false)}
                             >
-                              <Briefcase className="h-4 w-4" />
-                              My Services
-                            </Link>
-                            <Link
-                              to="/my-sales"
-                              className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                              onClick={() => setUserMenuOpen(false)}
-                            >
-                              <DollarSign className="h-4 w-4" />
-                              My Sales
+                              <TrendingUp className="h-4 w-4" />
+                              Dashboard
                             </Link>
                             <Link
                               to="/skill-tests"
@@ -368,14 +360,6 @@ export default function Navbar() {
 
                     {isFreelancer && (
                       <>
-                        <Link
-                          to="/earnings"
-                          className="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          <DollarSign className="h-4 w-4" />
-                          Earnings
-                        </Link>
                         <Link
                           to="/skill-tests"
                           className="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"

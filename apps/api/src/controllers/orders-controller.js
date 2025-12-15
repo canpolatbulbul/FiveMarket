@@ -140,7 +140,10 @@ export const getFreelancerOrders = async (req, res) => {
 
     res.json({
       success: true,
-      orders: result.rows,
+      orders: result.rows.map((order) => ({
+        ...order,
+        client_name: `${order.client_first_name} ${order.client_last_name}`,
+      })),
     });
   } catch (error) {
     console.error("Error fetching freelancer orders:", error);

@@ -45,6 +45,7 @@ export const getFeaturedServices = async (req, res) => {
       JOIN package p ON s.service_id = p.service_id
       LEFT JOIN "order" o ON p.package_id = o.package_id
       LEFT JOIN review r ON o.order_id = r.order_id
+      WHERE s.is_active = TRUE
       GROUP BY s.service_id, s.title, s.description, s.freelancer_id, u.first_name, u.last_name
       ORDER BY review_count DESC, avg_rating DESC
       LIMIT 12
@@ -355,6 +356,7 @@ export const searchServices = async (req, res) => {
         JOIN package p ON s.service_id = p.service_id
         LEFT JOIN "order" o ON p.package_id = o.package_id
         LEFT JOIN review r ON o.order_id = r.order_id
+        WHERE s.is_active = TRUE
         GROUP BY s.service_id
       ) AS service_stats
       JOIN service s ON s.service_id = service_stats.service_id
@@ -394,6 +396,7 @@ export const searchServices = async (req, res) => {
         JOIN package p ON s.service_id = p.service_id
         LEFT JOIN "order" o ON p.package_id = o.package_id
         LEFT JOIN review r ON o.order_id = r.order_id
+        WHERE s.is_active = TRUE
         GROUP BY s.service_id
       ) AS service_stats
       JOIN service s ON s.service_id = service_stats.service_id
@@ -716,6 +719,8 @@ export const getMyServices = async (req, res) => {
         s.title,
         s.description,
         s.created_at,
+        s.is_active,
+        s.paused_at,
         COUNT(DISTINCT p.package_id) as package_count,
         MIN(p.price) as min_price,
         COUNT(DISTINCT o.order_id) as total_orders,
@@ -733,7 +738,7 @@ export const getMyServices = async (req, res) => {
       LEFT JOIN "order" o ON p.package_id = o.package_id
       LEFT JOIN review r ON o.order_id = r.order_id
       WHERE s.freelancer_id = $1
-      GROUP BY s.service_id, s.title, s.description, s.created_at
+      GROUP BY s.service_id, s.title, s.description, s.created_at, s.is_active, s.paused_at
       ORDER BY s.created_at DESC
     `;
 
@@ -744,8 +749,10 @@ export const getMyServices = async (req, res) => {
       title: row.title,
       description: row.description,
       created_at: row.created_at,
+      is_active: row.is_active,
+      paused_at: row.paused_at,
       package_count: parseInt(row.package_count),
-      min_price: parseFloat(row.min_price) || 0,
+      starting_price: parseFloat(row.min_price) || 0,
       total_orders: parseInt(row.total_orders),
       avg_rating: parseFloat(row.avg_rating).toFixed(1),
       review_count: parseInt(row.review_count),
