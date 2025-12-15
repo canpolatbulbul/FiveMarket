@@ -8,6 +8,14 @@ import health from "./routers/health.js";
 import { authRouter } from "./routers/auth-router.js";
 import servicesRouter from "./routers/services-router.js";
 import categoriesRouter from "./routers/categories-router.js";
+import ordersRouter from "./routers/orders-router.js";
+import messagesRouter from "./routers/messages-router.js";
+import disputesRouter from "./routers/disputes-router.js";
+import usersRouter from "./routers/users-router.js";
+import adminRouter from "./routers/admin-router.js";
+import profileRouter from "./routers/profile-router.js";
+import freelancerRouter from "./routers/freelancer-router.js";
+import { errorHandler } from "./middleware/error-handler.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,20 +32,34 @@ app.use(
 app.use(express.json());
 app.use(morgan("dev"));
 
-// Serve uploaded images as static files with explicit CORS
+// Serve uploaded images as static files with explicit CORS headers
 app.use(
   "/uploads",
-  cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
-    credentials: true,
-  })
+  (req, res, next) => {
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      process.env.CORS_ORIGIN || "http://localhost:5173"
+    );
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  },
+  express.static(path.join("/app", "uploads"))
 );
-// Serve uploaded images as static files
-app.use("/uploads", express.static(path.join("/app", "uploads")));
 
 app.use("/api/health", health);
 app.use("/api/auth", authRouter);
 app.use("/api/services", servicesRouter);
 app.use("/api/categories", categoriesRouter);
+app.use("/api/orders", ordersRouter);
+app.use("/api/messages", messagesRouter);
+app.use("/api/disputes", disputesRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/admin", adminRouter);
+app.use("/api/profile", profileRouter);
+app.use("/api/freelancer", freelancerRouter);
+
+// Global error handler (must be last)
+app.use(errorHandler);
 
 export default app;

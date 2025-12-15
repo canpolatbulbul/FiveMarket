@@ -140,12 +140,16 @@ export const login = async (req, res) => {
         u.email,
         u.password,
         CASE 
+          WHEN EXISTS (SELECT 1 FROM administrator WHERE "userID" = u."userID")
+          THEN ARRAY['admin', 'client', 'freelancer']
           WHEN EXISTS (SELECT 1 FROM client WHERE "userID" = u."userID") 
             AND EXISTS (SELECT 1 FROM freelancer WHERE "userID" = u."userID")
           THEN ARRAY['client', 'freelancer']
           WHEN EXISTS (SELECT 1 FROM freelancer WHERE "userID" = u."userID")
           THEN ARRAY['freelancer', 'client']
-          ELSE ARRAY['client']
+          WHEN EXISTS (SELECT 1 FROM client WHERE "userID" = u."userID")
+          THEN ARRAY['client']
+          ELSE ARRAY[]::VARCHAR[]
         END as roles
       FROM "user" u
       WHERE u.email = $1
@@ -390,12 +394,16 @@ export const refreshToken = async (req, res) => {
         u.last_name,
         u.email,
         CASE 
+          WHEN EXISTS (SELECT 1 FROM administrator WHERE "userID" = u."userID")
+          THEN ARRAY['admin', 'client', 'freelancer']
           WHEN EXISTS (SELECT 1 FROM client WHERE "userID" = u."userID") 
             AND EXISTS (SELECT 1 FROM freelancer WHERE "userID" = u."userID")
           THEN ARRAY['client', 'freelancer']
           WHEN EXISTS (SELECT 1 FROM freelancer WHERE "userID" = u."userID")
           THEN ARRAY['freelancer', 'client']
-          ELSE ARRAY['client']
+          WHEN EXISTS (SELECT 1 FROM client WHERE "userID" = u."userID")
+          THEN ARRAY['client']
+          ELSE ARRAY[]::VARCHAR[]
         END as roles
        FROM refresh_token rt
        JOIN "user" u ON rt."userID" = u."userID"

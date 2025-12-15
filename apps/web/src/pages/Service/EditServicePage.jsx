@@ -479,7 +479,7 @@ export default function EditServicePage() {
           <div className="flex items-center justify-end gap-3">
             <button
               type="button"
-              onClick={() => navigate("/my-services")}
+              onClick={() => navigate(-1)}
               className="flex items-center gap-2 px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-100 transition-colors"
               disabled={saving}
             >

@@ -25,12 +25,27 @@ export const getFeaturedServices = async (req, res) => {
           WHERE pi.service_id = s.service_id 
           ORDER BY pi.display_order 
           LIMIT 1
-        ) as portfolio_image
+        ) as portfolio_image,
+        (
+          SELECT sc.category_id
+          FROM services_in_category sic
+          JOIN service_category sc ON sic.category_id = sc.category_id
+          WHERE sic.service_id = s.service_id
+          LIMIT 1
+        ) as category_id,
+        (
+          SELECT sc.description
+          FROM services_in_category sic
+          JOIN service_category sc ON sic.category_id = sc.category_id
+          WHERE sic.service_id = s.service_id
+          LIMIT 1
+        ) as category_name
       FROM service s
       JOIN "user" u ON s.freelancer_id = u."userID"
       JOIN package p ON s.service_id = p.service_id
       LEFT JOIN "order" o ON p.package_id = o.package_id
       LEFT JOIN review r ON o.order_id = r.order_id
+      WHERE s.is_active = TRUE
       GROUP BY s.service_id, s.title, s.description, s.freelancer_id, u.first_name, u.last_name
       ORDER BY review_count DESC, avg_rating DESC
       LIMIT 12
@@ -44,11 +59,13 @@ export const getFeaturedServices = async (req, res) => {
       description: row.description,
       freelancer_id: row.freelancer_id,
       freelancer_name: `${row.first_name} ${row.last_name}`,
-      min_price: parseFloat(row.min_price),
+      starting_price: parseFloat(row.min_price),
       package_count: parseInt(row.package_count),
       rating: parseFloat(row.avg_rating).toFixed(1),
       reviews: parseInt(row.review_count),
       portfolio_image: row.portfolio_image, // First portfolio image or null
+      category_id: row.category_id,
+      category_name: row.category_name,
     }));
 
     res.json({ services });
@@ -83,7 +100,7 @@ export const getServiceById = async (req, res) => {
       FROM service s
       JOIN "user" u ON s.freelancer_id = u."userID"
       LEFT JOIN package p ON s.service_id = p.service_id
-      LEFT JOIN services_in_category sic ON p.package_id = sic.package_id
+      LEFT JOIN services_in_category sic ON s.service_id = sic.service_id
       LEFT JOIN service_category c ON sic.category_id = c.category_id
       LEFT JOIN "order" o ON p.package_id = o.package_id
       LEFT JOIN review r ON o.order_id = r.order_id
@@ -189,8 +206,7 @@ export const getServiceById = async (req, res) => {
     const categoryIdsQuery = `
       SELECT DISTINCT sic.category_id
       FROM services_in_category sic
-      JOIN package p ON sic.package_id = p.package_id
-      WHERE p.service_id = $1
+      WHERE sic.service_id = $1
     `;
     const categoryIdsResult = await query(categoryIdsQuery, [id]);
     const category_ids = categoryIdsResult.rows.map((row) => row.category_id);
@@ -270,7 +286,7 @@ export const searchServices = async (req, res) => {
       paramCount++;
       conditions.push(`EXISTS (
         SELECT 1 FROM package p2 
-        JOIN services_in_category sic2 ON p2.package_id = sic2.package_id 
+        JOIN services_in_category sic2 ON s2.service_id = sic2.service_id 
         WHERE p2.service_id = s.service_id AND sic2.category_id = $${paramCount}
       )`);
       params.push(parseInt(category));
@@ -340,6 +356,7 @@ export const searchServices = async (req, res) => {
         JOIN package p ON s.service_id = p.service_id
         LEFT JOIN "order" o ON p.package_id = o.package_id
         LEFT JOIN review r ON o.order_id = r.order_id
+        WHERE s.is_active = TRUE
         GROUP BY s.service_id
       ) AS service_stats
       JOIN service s ON s.service_id = service_stats.service_id
@@ -379,12 +396,13 @@ export const searchServices = async (req, res) => {
         JOIN package p ON s.service_id = p.service_id
         LEFT JOIN "order" o ON p.package_id = o.package_id
         LEFT JOIN review r ON o.order_id = r.order_id
+        WHERE s.is_active = TRUE
         GROUP BY s.service_id
       ) AS service_stats
       JOIN service s ON s.service_id = service_stats.service_id
       JOIN "user" u ON s.freelancer_id = u."userID"
       LEFT JOIN package p ON s.service_id = p.service_id
-      LEFT JOIN services_in_category sic ON p.package_id = sic.package_id
+      LEFT JOIN services_in_category sic ON s.service_id = sic.service_id
       LEFT JOIN service_category c ON sic.category_id = c.category_id
       ${whereClause}
       GROUP BY s.service_id, s.title, s.description, s.freelancer_id, u.first_name, u.last_name, 
@@ -444,7 +462,7 @@ export const searchServices = async (req, res) => {
  */
 export const createService = async (req, res) => {
   try {
-    const { title, description, category_ids, packages } = req.body;
+    const { title, description, category_ids, packages, addons } = req.body;
 
     // Decode the hashid userID from JWT to get actual numeric ID
     const { decodeUserID } = await import("../utils/hashids.js");
@@ -542,6 +560,59 @@ export const createService = async (req, res) => {
       }
     }
 
+    // Parse add-ons if provided
+    let parsedAddons = [];
+    if (addons) {
+      if (typeof addons === "string") {
+        try {
+          parsedAddons = JSON.parse(addons);
+        } catch (e) {
+          return res.status(400).json({
+            error: "Invalid addons format",
+            message: "Add-ons must be valid JSON",
+          });
+        }
+      } else {
+        parsedAddons = addons;
+      }
+
+      // Validate add-ons
+      for (let i = 0; i < parsedAddons.length; i++) {
+        const addon = parsedAddons[i];
+
+        // Normalize types
+        addon.price =
+          typeof addon.price === "string"
+            ? parseFloat(addon.price)
+            : addon.price;
+        addon.delivery_days =
+          typeof addon.delivery_days === "string"
+            ? parseInt(addon.delivery_days)
+            : addon.delivery_days;
+
+        if (!addon.name || addon.name.trim().length < 2) {
+          return res.status(400).json({
+            error: "Invalid add-on data",
+            message: `Add-on ${i + 1}: Name must be at least 2 characters`,
+          });
+        }
+
+        if (isNaN(addon.price) || addon.price < 0) {
+          return res.status(400).json({
+            error: "Invalid add-on data",
+            message: `Add-on ${i + 1}: Price must be a non-negative number`,
+          });
+        }
+
+        if (isNaN(addon.delivery_days)) {
+          return res.status(400).json({
+            error: "Invalid add-on data",
+            message: `Add-on ${i + 1}: Delivery days must be a number`,
+          });
+        }
+      }
+    }
+
     // Use transaction helper
     const { tx } = await import("../db/tx.js");
     const service_id = await tx(async (client) => {
@@ -558,23 +629,45 @@ export const createService = async (req, res) => {
       // Create packages
       for (const pkg of parsedPackages) {
         const packageResult = await client.query(
-          `INSERT INTO package (service_id, name, description, price, delivery_time) 
-           VALUES ($1, $2, $3, $4, $5) 
+          `INSERT INTO package (service_id, name, description, price, delivery_time, revisions_allowed) 
+           VALUES ($1, $2, $3, $4, $5, $6) 
            RETURNING package_id`,
-          [service_id, pkg.name, pkg.description, pkg.price, pkg.delivery_time]
+          [
+            service_id,
+            pkg.name,
+            pkg.description,
+            pkg.price,
+            pkg.delivery_time,
+            pkg.revisions_allowed || 0,
+          ]
         );
+      }
 
-        const package_id = packageResult.rows[0].package_id;
+      // Link service to categories (once per service, not per package)
+      if (parsedCategoryIds && parsedCategoryIds.length > 0) {
+        for (const category_id of parsedCategoryIds) {
+          await client.query(
+            `INSERT INTO services_in_category (service_id, category_id) 
+             VALUES ($1, $2)`,
+            [service_id, category_id]
+          );
+        }
+      }
 
-        // Link package to categories
-        if (parsedCategoryIds && parsedCategoryIds.length > 0) {
-          for (const category_id of parsedCategoryIds) {
-            await client.query(
-              `INSERT INTO services_in_category (package_id, category_id) 
-               VALUES ($1, $2)`,
-              [package_id, category_id]
-            );
-          }
+      // Create add-ons
+      if (parsedAddons && parsedAddons.length > 0) {
+        for (const addon of parsedAddons) {
+          await client.query(
+            `INSERT INTO service_addon (service_id, name, description, price, delivery_days) 
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+              service_id,
+              addon.name,
+              addon.description || null,
+              addon.price,
+              addon.delivery_days,
+            ]
+          );
         }
       }
 
@@ -626,6 +719,8 @@ export const getMyServices = async (req, res) => {
         s.title,
         s.description,
         s.created_at,
+        s.is_active,
+        s.paused_at,
         COUNT(DISTINCT p.package_id) as package_count,
         MIN(p.price) as min_price,
         COUNT(DISTINCT o.order_id) as total_orders,
@@ -643,7 +738,7 @@ export const getMyServices = async (req, res) => {
       LEFT JOIN "order" o ON p.package_id = o.package_id
       LEFT JOIN review r ON o.order_id = r.order_id
       WHERE s.freelancer_id = $1
-      GROUP BY s.service_id, s.title, s.description, s.created_at
+      GROUP BY s.service_id, s.title, s.description, s.created_at, s.is_active, s.paused_at
       ORDER BY s.created_at DESC
     `;
 
@@ -654,8 +749,10 @@ export const getMyServices = async (req, res) => {
       title: row.title,
       description: row.description,
       created_at: row.created_at,
+      is_active: row.is_active,
+      paused_at: row.paused_at,
       package_count: parseInt(row.package_count),
-      min_price: parseFloat(row.min_price) || 0,
+      starting_price: parseFloat(row.min_price) || 0,
       total_orders: parseInt(row.total_orders),
       avg_rating: parseFloat(row.avg_rating).toFixed(1),
       review_count: parseInt(row.review_count),
@@ -803,25 +900,21 @@ export const updateService = async (req, res) => {
 
         const packageIds = packagesResult.rows.map((row) => row.package_id);
 
-        // Delete existing category associations for all packages
-        if (packageIds.length > 0) {
-          await client.query(
-            `DELETE FROM services_in_category 
-             WHERE package_id = ANY($1::int[])`,
-            [packageIds]
-          );
+        // Delete existing category associations for the service
+        await client.query(
+          `DELETE FROM services_in_category 
+           WHERE service_id = $1`,
+          [id]
+        );
 
-          // Insert new category associations for each package
-          for (const packageId of packageIds) {
-            for (const categoryId of category_ids) {
-              await client.query(
-                `INSERT INTO services_in_category (package_id, category_id) 
-                 VALUES ($1, $2)
-                 ON CONFLICT DO NOTHING`,
-                [packageId, categoryId]
-              );
-            }
-          }
+        // Insert new category associations for the service
+        for (const categoryId of category_ids) {
+          await client.query(
+            `INSERT INTO services_in_category (service_id, category_id) 
+             VALUES ($1, $2)
+             ON CONFLICT DO NOTHING`,
+            [id, categoryId]
+          );
         }
       }
     });

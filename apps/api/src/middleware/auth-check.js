@@ -59,12 +59,16 @@ const checkAuth = async (req, res, next) => {
           u.last_name,
           u.email,
           CASE 
+          WHEN EXISTS (SELECT 1 FROM administrator WHERE "userID" = u."userID")
+          THEN ARRAY['admin', 'client', 'freelancer']
           WHEN EXISTS (SELECT 1 FROM client WHERE "userID" = u."userID") 
             AND EXISTS (SELECT 1 FROM freelancer WHERE "userID" = u."userID")
             THEN ARRAY['client', 'freelancer']
           WHEN EXISTS (SELECT 1 FROM freelancer WHERE "userID" = u."userID")
           THEN ARRAY['freelancer', 'client']
-            ELSE ARRAY['client']
+          WHEN EXISTS (SELECT 1 FROM client WHERE "userID" = u."userID")
+            THEN ARRAY['client']
+            ELSE ARRAY[]::VARCHAR[]
           END as roles
         FROM "user" u
         WHERE u."userID" = $1

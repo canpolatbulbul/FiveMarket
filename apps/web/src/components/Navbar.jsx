@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import BecomeFreelancerModal from "@/components/BecomeFreelancerModal";
 import { useBecomeFreelancer } from "@/hooks/auth/useBecomeFreelancer";
 import { toast } from "sonner";
-import { Search, Menu, X, ChevronDown, User, Settings, HelpCircle, LogOut, DollarSign, FileText, Briefcase } from "lucide-react";
+import { Search, Menu, X, ChevronDown, User, Settings, HelpCircle, LogOut, DollarSign, FileText, Briefcase, TrendingUp, ShoppingBag } from "lucide-react";
 
 export default function Navbar() {
   const { user } = useAuth();
@@ -93,35 +93,38 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/browse" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
-              Browse
-            </Link>
-
             {user ? (
               <>
-                {/* Common for logged-in users */}
-                <Link to="/orders" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
-                  Orders
-                </Link>
-                <Link to="/messages" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
-                  Messages
-                </Link>
+                {/* Admin Navigation */}
+                {isAdmin ? (
+                  <>
+                    <Link to="/browse" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                      Browse
+                    </Link>
+                    <Link to="/admin/dashboard" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                      Dashboard
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    {/* Regular User Navigation */}
+                    <Link to="/browse" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                      Browse
+                    </Link>
+                    <Link to="/messages" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                      Messages
+                    </Link>
 
-                {/* Admin */}
-                {isAdmin && (
-                  <Link to="/admin" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
-                    Admin
-                  </Link>
-                )}
-
-                {/* Freelancer Create Service Button - Rightmost */}
-                {isFreelancer && (
-                  <Link
-                    to="/services/create"
-                    className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-200"
-                  >
-                    Create Service
-                  </Link>
+                    {/* Freelancer Create Service Button */}
+                    {isFreelancer && (
+                      <Link
+                        to="/services/create"
+                        className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-200"
+                      >
+                        Create Service
+                      </Link>
+                    )}
+                  </>
                 )}
 
                 {/* Become a Freelancer Button - For clients only */}
@@ -168,23 +171,26 @@ export default function Navbar() {
                           Profile
                         </Link>
 
-                        {isFreelancer && (
+                        {!isAdmin && (
+                          <Link
+                            to="/my-orders"
+                            className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                            onClick={() => setUserMenuOpen(false)}
+                          >
+                            <ShoppingBag className="h-4 w-4" />
+                            My Orders
+                          </Link>
+                        )}
+
+                        {isFreelancer && !isAdmin && (
                           <>
                             <Link
-                              to="/my-services"
+                              to="/freelancer/dashboard"
                               className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                               onClick={() => setUserMenuOpen(false)}
                             >
-                              <Briefcase className="h-4 w-4" />
-                              My Services
-                            </Link>
-                            <Link
-                              to="/earnings"
-                              className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                              onClick={() => setUserMenuOpen(false)}
-                            >
-                              <DollarSign className="h-4 w-4" />
-                              Earnings
+                              <TrendingUp className="h-4 w-4" />
+                              Dashboard
                             </Link>
                             <Link
                               to="/skill-tests"
@@ -196,26 +202,8 @@ export default function Navbar() {
                             </Link>
                           </>
                         )}
-
-                        <Link
-                          to="/settings"
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                          onClick={() => setUserMenuOpen(false)}
-                        >
-                          <Settings className="h-4 w-4" />
-                          Settings
-                        </Link>
-
-                        <Link
-                          to="/support"
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                          onClick={() => setUserMenuOpen(false)}
-                        >
-                          <HelpCircle className="h-4 w-4" />
-                          Support
-                        </Link>
-
-                        <div className="border-t border-slate-200 mt-2 pt-2">
+                        
+                        <div className="border-t border-slate-200 pt-2">
                           <Link
                             to="/auth/logout"
                             className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
@@ -325,15 +313,6 @@ export default function Navbar() {
                     Messages
                   </Link>
 
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      className="block px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Admin
-                    </Link>
-                  )}
 
                   {/* Mobile User Menu */}
                   <div className="border-t border-slate-200 pt-4 mt-4">
@@ -355,14 +334,6 @@ export default function Navbar() {
 
                     {isFreelancer && (
                       <>
-                        <Link
-                          to="/earnings"
-                          className="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          <DollarSign className="h-4 w-4" />
-                          Earnings
-                        </Link>
                         <Link
                           to="/skill-tests"
                           className="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"

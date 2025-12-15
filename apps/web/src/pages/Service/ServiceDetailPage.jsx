@@ -285,7 +285,10 @@ export default function ServiceDetailPage() {
                         {selectedPackage.delivery_time} day{selectedPackage.delivery_time !== 1 ? 's' : ''} delivery
                       </p>
                     </div>
-                    <button className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                    <button 
+                      onClick={() => navigate(`/service/${service.service_id}/order`)}
+                      className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                    >
                       <ShoppingCart className="h-5 w-5" />
                       Order Now
                     </button>

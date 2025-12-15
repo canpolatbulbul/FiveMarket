@@ -23,14 +23,11 @@ node_modules/
 # Documentation (Generated)
 # ---------------------------------
 # Ignore generated documentation files
-BOILERPLATE_UPDATES.md
-MIGRATION_GUIDE.md
-DUAL_ROLE_SYSTEM.md
-V0_PROMPTS.md
-
+*.md
+.agent/
 # Keep important project documentation
 !README.md
-
+!SETUP_GUIDE.md
 # ---------------------------------
 # Production / Build Artifacts
 # ---------------------------------
