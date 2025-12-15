@@ -30,6 +30,7 @@ const ResetPassword = lazy(() => import("../pages/Auth/ResetPassword.jsx"));
 const TermsAndConditions = lazy(() => import("../pages/Legal/TermsAndConditions.jsx"));
 const PrivacyPolicy = lazy(() => import("../pages/Legal/PrivacyPolicy.jsx"));
 const Logout = lazy(() => import("../pages/Auth/Logout.jsx"));
+const ProfilePage = lazy(() => import("../pages/Profile/ProfilePage.jsx"));
 const ForbiddenPage = lazy(() => import("../pages/Error/ForbiddenPage.jsx"));
 
 const LoadComponent = ({component: Component}) => (
@@ -109,6 +110,10 @@ const AllRoutes = () => {
         {
             path: "/services/edit/:id",
             element: <ProtectedRoute><LoadComponent component={EditServicePage} /></ProtectedRoute>
+        },
+        {
+            path:"/profile",
+            element: <ProtectedRoute><LoadComponent component={ProfilePage} /></ProtectedRoute>
         },
         {
             path: "/auth",
