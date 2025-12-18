@@ -21,6 +21,12 @@ const DisputeDetailPage = lazy(() => import("../pages/Dispute/DisputeDetailPage.
 const AdminDisputesPage = lazy(() => import("../pages/Admin/AdminDisputesPage.jsx"));
 const AdminOrdersPage = lazy(() => import("../pages/Admin/AdminOrdersPage.jsx"));
 const AdminUsersPage = lazy(() => import("../pages/Admin/AdminUsersPage.jsx"));
+const AdminSkillTestsPage = lazy(() => import("../pages/Admin/AdminSkillTestsPage.jsx"));
+const AdminSkillTestFormPage = lazy(() => import("../pages/Admin/AdminSkillTestFormPage.jsx"));
+const AdminSkillTestDetailPage = lazy(() => import("../pages/Admin/AdminSkillTestDetailPage.jsx"));
+const SkillTestsPage = lazy(() => import("../pages/SkillTests/SkillTestsPage.jsx"));
+const TakeSkillTestPage = lazy(() => import("../pages/SkillTests/TakeSkillTestPage.jsx"));
+const TestResultsPage = lazy(() => import("../pages/SkillTests/TestResultsPage.jsx"));
 const Register = lazy(() => import("../pages/Auth/Register.jsx"));
 const Login = lazy(() => import("../pages/Auth/Login.jsx"));
 const ForgotPassword = lazy(() => import("../pages/Auth/ForgotPassword.jsx"));
@@ -137,7 +143,11 @@ const AllRoutes = () => {
                     path: "orders",
                     element: <ProtectedRoute><LoadComponent component={AdminOrdersPage} /></ProtectedRoute>
                 },
-                { path: "users", element: <ProtectedRoute><LoadComponent component={AdminUsersPage} /></ProtectedRoute>}
+                { path: "users", element: <ProtectedRoute><LoadComponent component={AdminUsersPage} /></ProtectedRoute>},
+                { path: "skill-tests", element: <ProtectedRoute><LoadComponent component={AdminSkillTestsPage} /></ProtectedRoute>},
+                { path: "skill-tests/new", element: <ProtectedRoute><LoadComponent component={AdminSkillTestFormPage} /></ProtectedRoute>},
+                { path: "skill-tests/:id", element: <ProtectedRoute><LoadComponent component={AdminSkillTestDetailPage} /></ProtectedRoute>},
+                { path: "skill-tests/:id/edit", element: <ProtectedRoute><LoadComponent component={AdminSkillTestFormPage} /></ProtectedRoute>}
             ]
         },
         // Freelancer routes
@@ -145,6 +155,15 @@ const AllRoutes = () => {
             path: "/freelancer",
             children: [
                 { path: "dashboard", element: <ProtectedRoute requiredRole={Roles.FREELANCER}><LoadComponent component={FreelancerDashboard} /></ProtectedRoute>}
+            ]
+        },
+        // Skill Tests routes
+        {
+            path: "/skill-tests",
+            children: [
+                { index: true, element: <ProtectedRoute><LoadComponent component={SkillTestsPage} /></ProtectedRoute>},
+                { path: ":id/take", element: <ProtectedRoute><LoadComponent component={TakeSkillTestPage} /></ProtectedRoute>},
+                { path: "results/:attemptId", element: <ProtectedRoute><LoadComponent component={TestResultsPage} /></ProtectedRoute>}
             ]
         },
         // Auth routes

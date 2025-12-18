@@ -13,7 +13,7 @@ export const getDashboardStats = async (req, res) => {
     const earningsResult = await query(
       `SELECT 
         f.total_earned,
-        COALESCE(SUM(CASE WHEN wr.status = 'completed' THEN wr.amount ELSE 0 END), 0) as total_withdrawn,
+        COALESCE(SUM(CASE WHEN wr.status = 'approved' THEN wr.amount ELSE 0 END), 0) as total_withdrawn,
         COALESCE(SUM(CASE WHEN wr.status = 'pending' THEN wr.amount ELSE 0 END), 0) as pending_withdrawals
       FROM freelancer f
       LEFT JOIN withdrawal_request wr ON f."userID" = wr.freelancer_id
@@ -214,7 +214,7 @@ export const requestWithdrawal = async (req, res) => {
     const balanceResult = await query(
       `SELECT 
         f.total_earned,
-        COALESCE(SUM(CASE WHEN wr.status = 'completed' THEN wr.amount ELSE 0 END), 0) as total_withdrawn,
+        COALESCE(SUM(CASE WHEN wr.status = 'approved' THEN wr.amount ELSE 0 END), 0) as total_withdrawn,
         COALESCE(SUM(CASE WHEN wr.status = 'pending' THEN wr.amount ELSE 0 END), 0) as pending_withdrawals
       FROM freelancer f
       LEFT JOIN withdrawal_request wr ON f."userID" = wr.freelancer_id

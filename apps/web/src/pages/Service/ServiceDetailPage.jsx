@@ -13,6 +13,7 @@ export default function ServiceDetailPage() {
   const [reviews, setReviews] = useState([]);
   const [freelancerStats, setFreelancerStats] = useState(null);
   const [portfolioImages, setPortfolioImages] = useState([]);
+  const [freelancerCertifications, setFreelancerCertifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -35,10 +36,24 @@ export default function ServiceDetailPage() {
       if (response.data.packages.length > 0) {
         setSelectedPackage(response.data.packages[0]);
       }
+      // Fetch freelancer certifications
+      if (response.data.service.freelancer_id) {
+        fetchFreelancerCertifications(response.data.service.freelancer_id);
+      }
     } catch (error) {
       console.error("Failed to fetch service details:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFreelancerCertifications = async (freelancerId) => {
+    try {
+      const api = new APICore();
+      const response = await api.get(`/api/users/${freelancerId}/certifications`);
+      setFreelancerCertifications(response.data.certifications || []);
+    } catch (error) {
+      console.error("Failed to fetch certifications:", error);
     }
   };
 
@@ -340,6 +355,33 @@ export default function ServiceDetailPage() {
                     </span>
                   </div>
                 </div>
+                
+                {/* Freelancer Certifications */}
+                {freelancerCertifications.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-slate-200">
+                    <h4 className="text-sm font-semibold text-slate-900 mb-3">Skill Certifications</h4>
+                    <div className="space-y-2">
+                      {freelancerCertifications.map((cert) => (
+                        <div
+                          key={cert.certificateId}
+                          className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg"
+                        >
+                          <Award className="h-4 w-4 text-green-600 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-slate-900 truncate">
+                              {cert.testTitle}
+                            </p>
+                            {cert.categoryName && (
+                              <p className="text-xs text-slate-600 truncate">
+                                {cert.categoryName}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

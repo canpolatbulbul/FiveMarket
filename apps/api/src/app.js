@@ -15,6 +15,7 @@ import usersRouter from "./routers/users-router.js";
 import adminRouter from "./routers/admin-router.js";
 import profileRouter from "./routers/profile-router.js";
 import freelancerRouter from "./routers/freelancer-router.js";
+import skillTestsRouter from "./routers/skill-tests-router.js";
 import { errorHandler } from "./middleware/error-handler.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -58,6 +59,7 @@ app.use("/api/users", usersRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/freelancer", freelancerRouter);
+app.use("/api/skill-tests", skillTestsRouter);
 
 // Global error handler (must be last)
 app.use(errorHandler);

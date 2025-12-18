@@ -2,6 +2,7 @@ import express from "express";
 import {
   getAllUsers,
   promoteToAdmin,
+  getUserCertifications,
 } from "../controllers/users-controller.js";
 import checkAuth from "../middleware/auth-check.js";
 import checkClearance from "../middleware/clearance-check.js";
@@ -32,5 +33,12 @@ router.post(
   checkClearance(ClearanceLevels.ADMIN),
   promoteToAdmin
 );
+
+/**
+ * @route   GET /api/users/:id/certifications
+ * @desc    Get user's skill certifications
+ * @access  Public
+ */
+router.get("/:id/certifications", getUserCertifications);
 
 export default router;

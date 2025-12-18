@@ -68,21 +68,45 @@ CREATE INDEX IF NOT EXISTS idx_administrator_user_id ON administrator("userID");
 -- Skills & Certification
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS skill_exam (
-  exam_id BIGSERIAL PRIMARY KEY,
-  skill_topic VARCHAR(100) NOT NULL,
-  result VARCHAR(50),
-  content TEXT NOT NULL,
+-- Skill Test (renamed from skill_exam)
+CREATE TABLE IF NOT EXISTS skill_test (
+  test_id BIGSERIAL PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  category_id BIGINT REFERENCES service_category(category_id) ON DELETE SET NULL,
+  pass_percentage INT NOT NULL DEFAULT 70,
+  time_limit_minutes INT NOT NULL DEFAULT 10,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_by BIGINT REFERENCES administrator("userID") ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT pass_percentage_range CHECK (pass_percentage >= 0 AND pass_percentage <= 100)
 );
 
-CREATE INDEX IF NOT EXISTS idx_skill_exam_topic ON skill_exam(skill_topic);
+CREATE INDEX IF NOT EXISTS idx_skill_test_category ON skill_test(category_id);
+CREATE INDEX IF NOT EXISTS idx_skill_test_active ON skill_test(is_active);
 
-DROP TRIGGER IF EXISTS trg_skill_exam_updated_at ON skill_exam;
-CREATE TRIGGER trg_skill_exam_updated_at
-  BEFORE UPDATE ON skill_exam
+DROP TRIGGER IF EXISTS trg_skill_test_updated_at ON skill_test;
+CREATE TRIGGER trg_skill_test_updated_at
+  BEFORE UPDATE ON skill_test
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Skill Test Questions
+CREATE TABLE IF NOT EXISTS skill_test_question (
+  question_id BIGSERIAL PRIMARY KEY,
+  test_id BIGINT NOT NULL REFERENCES skill_test(test_id) ON DELETE CASCADE,
+  question_text TEXT NOT NULL,
+  option_a TEXT NOT NULL,
+  option_b TEXT NOT NULL,
+  option_c TEXT NOT NULL,
+  option_d TEXT NOT NULL,
+  correct_answer CHAR(1) NOT NULL CHECK (correct_answer IN ('A', 'B', 'C', 'D')),
+  order_index INT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT unique_test_order UNIQUE (test_id, order_index)
+);
+
+CREATE INDEX IF NOT EXISTS idx_test_question_test ON skill_test_question(test_id);
 
 CREATE TABLE IF NOT EXISTS certificate (
   certificate_id BIGSERIAL PRIMARY KEY,
@@ -99,27 +123,29 @@ CREATE TRIGGER trg_certificate_updated_at
 CREATE TABLE IF NOT EXISTS skill_certification (
   certificate_id BIGINT PRIMARY KEY REFERENCES certificate(certificate_id) ON DELETE CASCADE,
   "userID" BIGINT NOT NULL REFERENCES "user"("userID") ON DELETE CASCADE,
-  exam_id BIGINT NOT NULL REFERENCES skill_exam(exam_id) ON DELETE CASCADE,
-  CONSTRAINT unique_user_exam UNIQUE ("userID", exam_id)
+  test_id BIGINT NOT NULL REFERENCES skill_test(test_id) ON DELETE CASCADE,
+  CONSTRAINT unique_user_test UNIQUE ("userID", test_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_skill_cert_user ON skill_certification("userID");
-CREATE INDEX IF NOT EXISTS idx_skill_cert_exam ON skill_certification(exam_id);
+CREATE INDEX IF NOT EXISTS idx_skill_cert_test ON skill_certification(test_id);
 
 CREATE TABLE IF NOT EXISTS test_attempt (
   attempt_id BIGSERIAL PRIMARY KEY,
   freelancer_id BIGINT NOT NULL REFERENCES freelancer("userID") ON DELETE CASCADE,
-  exam_id BIGINT NOT NULL REFERENCES skill_exam(exam_id) ON DELETE CASCADE,
+  test_id BIGINT NOT NULL REFERENCES skill_test(test_id) ON DELETE CASCADE,
   started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   submitted_at TIMESTAMPTZ,
   score_percent NUMERIC(5,2),
   passed BOOLEAN NOT NULL DEFAULT false,
   answers_blob JSONB,
+  time_taken_seconds INT,
+  attempt_number INT NOT NULL DEFAULT 1,
   CONSTRAINT score_range CHECK (score_percent >= 0 AND score_percent <= 100)
 );
 
 CREATE INDEX IF NOT EXISTS idx_test_attempt_freelancer ON test_attempt(freelancer_id);
-CREATE INDEX IF NOT EXISTS idx_test_attempt_exam ON test_attempt(exam_id);
+CREATE INDEX IF NOT EXISTS idx_test_attempt_test ON test_attempt(test_id);
 
 -- ============================================================================
 -- Services & Packages
@@ -234,24 +260,6 @@ CREATE TRIGGER trg_money_transaction_updated_at
   BEFORE UPDATE ON money_transaction
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
-CREATE TABLE IF NOT EXISTS client_transaction (
-  transaction_id BIGINT PRIMARY KEY REFERENCES money_transaction(transaction_id) ON DELETE CASCADE,
-  client_id BIGINT NOT NULL REFERENCES client("userID") ON DELETE RESTRICT,
-  freelancer_id BIGINT NOT NULL REFERENCES freelancer("userID") ON DELETE RESTRICT,
-  CONSTRAINT different_parties CHECK (client_id <> freelancer_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_client_transaction_client ON client_transaction(client_id);
-CREATE INDEX IF NOT EXISTS idx_client_transaction_freelancer ON client_transaction(freelancer_id);
-
-CREATE TABLE IF NOT EXISTS belongs_to_order (
-  order_id BIGINT NOT NULL REFERENCES "order"(order_id) ON DELETE CASCADE,
-  transaction_id BIGINT NOT NULL REFERENCES money_transaction(transaction_id) ON DELETE CASCADE,
-  PRIMARY KEY (order_id, transaction_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_belongs_to_order_order ON belongs_to_order(order_id);
-CREATE INDEX IF NOT EXISTS idx_belongs_to_order_transaction ON belongs_to_order(transaction_id);
 
 -- ============================================================================
 -- Communication
@@ -347,60 +355,6 @@ CREATE INDEX IF NOT EXISTS idx_dispute_status ON dispute_resolution(status);
 DROP TRIGGER IF EXISTS trg_dispute_resolution_updated_at ON dispute_resolution;
 CREATE TRIGGER trg_dispute_resolution_updated_at
   BEFORE UPDATE ON dispute_resolution
-  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
-CREATE TABLE IF NOT EXISTS support_ticket (
-  ticket_id BIGSERIAL PRIMARY KEY,
-  "userID" BIGINT NOT NULL REFERENCES "user"("userID") ON DELETE CASCADE,
-  admin_id BIGINT REFERENCES administrator("userID") ON DELETE SET NULL,
-  subject VARCHAR(255) NOT NULL,
-  opened_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  status VARCHAR(50) NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT ticket_status_values CHECK (status IN ('open','assigned','waiting_user','waiting_admin','closed'))
-);
-
-CREATE INDEX IF NOT EXISTS idx_support_ticket_user ON support_ticket("userID");
-CREATE INDEX IF NOT EXISTS idx_support_ticket_admin ON support_ticket(admin_id);
-CREATE INDEX IF NOT EXISTS idx_support_ticket_status ON support_ticket(status);
-
-DROP TRIGGER IF EXISTS trg_support_ticket_updated_at ON support_ticket;
-CREATE TRIGGER trg_support_ticket_updated_at
-  BEFORE UPDATE ON support_ticket
-  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
-CREATE TABLE IF NOT EXISTS ticket_message (
-  ticket_id BIGINT NOT NULL REFERENCES support_ticket(ticket_id) ON DELETE CASCADE,
-  message_no INT NOT NULL,
-  sender_user_id BIGINT NOT NULL REFERENCES "user"("userID") ON DELETE CASCADE,
-  content TEXT NOT NULL,
-  sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (ticket_id, message_no)
-);
-
-CREATE INDEX IF NOT EXISTS idx_ticket_message_sender ON ticket_message(sender_user_id);
-
--- ============================================================================
--- Admin & Reporting
--- ============================================================================
-
-CREATE TABLE IF NOT EXISTS report (
-  report_id BIGSERIAL PRIMARY KEY,
-  admin_id BIGINT NOT NULL REFERENCES administrator("userID") ON DELETE RESTRICT,
-  generation_time TIMESTAMPTZ NOT NULL DEFAULT now(),
-  parameter VARCHAR(255),
-  report_type VARCHAR(100) NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS idx_report_admin ON report(admin_id);
-CREATE INDEX IF NOT EXISTS idx_report_type ON report(report_type);
-
-DROP TRIGGER IF EXISTS trg_report_updated_at ON report;
-CREATE TRIGGER trg_report_updated_at
-  BEFORE UPDATE ON report
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- ============================================================================
