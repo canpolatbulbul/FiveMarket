@@ -50,7 +50,9 @@ CREATE INDEX IF NOT EXISTS idx_client_user_id ON client("userID");
 CREATE TABLE IF NOT EXISTS freelancer (
   "userID" BIGINT PRIMARY KEY REFERENCES "user"("userID") ON DELETE CASCADE,
   total_earned NUMERIC(10,2) NOT NULL DEFAULT 0,
-  CONSTRAINT total_earned_non_negative CHECK (total_earned >= 0)
+  total_withdrawn NUMERIC(10,2) NOT NULL DEFAULT 0,
+  CONSTRAINT total_earned_non_negative CHECK (total_earned >= 0),
+  CONSTRAINT total_withdrawn_non_negative CHECK (total_withdrawn >= 0)
 );
 
 CREATE INDEX IF NOT EXISTS idx_freelancer_user_id ON freelancer("userID");
