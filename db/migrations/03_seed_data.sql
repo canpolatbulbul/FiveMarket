@@ -6,16 +6,11 @@
 -- ============================================================================
 
 -- Clear existing data (in reverse dependency order)
-TRUNCATE TABLE ticket_message CASCADE;
-TRUNCATE TABLE support_ticket CASCADE;
-TRUNCATE TABLE report CASCADE;
 TRUNCATE TABLE dispute_resolution CASCADE;
 TRUNCATE TABLE review CASCADE;
 TRUNCATE TABLE revision_request CASCADE;
 TRUNCATE TABLE message CASCADE;
 TRUNCATE TABLE conversation CASCADE;
-TRUNCATE TABLE belongs_to_order CASCADE;
-TRUNCATE TABLE client_transaction CASCADE;
 TRUNCATE TABLE money_transaction CASCADE;
 TRUNCATE TABLE "order" CASCADE;
 TRUNCATE TABLE services_in_category CASCADE;
@@ -25,7 +20,8 @@ TRUNCATE TABLE service CASCADE;
 TRUNCATE TABLE test_attempt CASCADE;
 TRUNCATE TABLE skill_certification CASCADE;
 TRUNCATE TABLE certificate CASCADE;
-TRUNCATE TABLE skill_exam CASCADE;
+TRUNCATE TABLE skill_test_question CASCADE;
+TRUNCATE TABLE skill_test CASCADE;
 TRUNCATE TABLE administrator CASCADE;
 TRUNCATE TABLE freelancer CASCADE;
 TRUNCATE TABLE client CASCADE;
@@ -41,12 +37,11 @@ ALTER SEQUENCE money_transaction_transaction_id_seq RESTART WITH 5;
 ALTER SEQUENCE conversation_conversation_id_seq RESTART WITH 1;
 ALTER SEQUENCE revision_request_revision_id_seq RESTART WITH 1;
 ALTER SEQUENCE review_review_id_seq RESTART WITH 1;
-ALTER SEQUENCE dispute_resolution_dispute_id_seq RESTART WITH 1;
-ALTER SEQUENCE support_ticket_ticket_id_seq RESTART WITH 1;
-ALTER SEQUENCE report_report_id_seq RESTART WITH 1;
-ALTER SEQUENCE skill_exam_exam_id_seq RESTART WITH 1;
-ALTER SEQUENCE certificate_certificate_id_seq RESTART WITH 1;
-ALTER SEQUENCE test_attempt_attempt_id_seq RESTART WITH 1;
+ALTER SEQUENCE dispute_resolution_dispute_id_seq RESTART WITH 2;
+ALTER SEQUENCE skill_test_test_id_seq RESTART WITH 4;
+ALTER SEQUENCE skill_test_question_question_id_seq RESTART WITH 16;
+ALTER SEQUENCE certificate_certificate_id_seq RESTART WITH 6;
+ALTER SEQUENCE test_attempt_attempt_id_seq RESTART WITH 6;
 
 -- ============================================================================
 -- Users (password is 'password123' hashed with bcryptjs)
@@ -304,17 +299,6 @@ INSERT INTO money_transaction (transaction_id, amount, receiver_iban, sender_iba
 (3, 250.00, 'TR330006100519786457841328', 'TR330006100519786457841002', NOW() - INTERVAL '38 days'),
 (4, 120.00, 'TR330006100519786457841329', 'TR330006100519786457841003', NOW() - INTERVAL '15 days');
 
-INSERT INTO client_transaction (transaction_id, client_id, freelancer_id) VALUES
-(1, 1, 6),
-(2, 2, 7),
-(3, 2, 14),
-(4, 3, 15);
-
-INSERT INTO belongs_to_order (order_id, transaction_id) VALUES
-(1, 1),
-(2, 2),
-(7, 3),
-(8, 4);
 
 -- ============================================================================
 -- Conversations & Messages
@@ -345,16 +329,40 @@ INSERT INTO message (conversation_id, message_no, sender_user_id, content, sent_
 (4, 3, 1, 'Perfect! Go ahead.', NOW() - INTERVAL '2 days', true);
 
 -- ============================================================================
--- Skill Exams & Certifications
+-- Skill Tests & Certifications
 -- ============================================================================
 
-INSERT INTO skill_exam (exam_id, skill_topic, result, content) VALUES
-(1, 'JavaScript Fundamentals', 'pass', 'Multiple choice questions covering ES6+, async/await, promises, and DOM manipulation.'),
-(2, 'React Development', 'pass', 'Questions on hooks, state management, component lifecycle, and best practices.'),
-(3, 'SEO Basics', 'pass', 'Covering on-page SEO, keyword research, link building, and analytics.'),
-(4, 'Graphic Design Principles', 'pass', 'Color theory, typography, composition, and design software proficiency.'),
-(5, 'Content Writing', 'pass', 'Grammar, style, tone, SEO writing, and audience targeting.');
+-- Skill Tests (3 tests with 5 questions each)
+INSERT INTO skill_test (test_id, title, description, category_id, pass_percentage, time_limit_minutes, is_active, created_by) VALUES
+(1, 'JavaScript Fundamentals', 'Test your knowledge of JavaScript basics including ES6+, async/await, promises, and DOM manipulation.', 5, 70, 10, true, 21),
+(2, 'React Development', 'Demonstrate your React.js skills covering hooks, state management, component lifecycle, and best practices.', 5, 70, 10, true, 21),
+(3, 'SEO Essentials', 'Prove your SEO knowledge covering on-page optimization, keyword research, link building, and analytics.', 2, 70, 10, true, 22);
 
+-- Questions for JavaScript Fundamentals (test_id = 1)
+INSERT INTO skill_test_question (test_id, question_text, option_a, option_b, option_c, option_d, correct_answer, order_index) VALUES
+(1, 'What is the output of: console.log(typeof null)?', 'null', 'undefined', 'object', 'number', 'C', 1),
+(1, 'Which method is used to add an element to the end of an array?', 'unshift()', 'push()', 'pop()', 'shift()', 'B', 2),
+(1, 'What does the await keyword do in JavaScript?', 'Makes a function synchronous', 'Pauses execution until a Promise resolves', 'Creates a new Promise', 'Cancels a pending operation', 'B', 3),
+(1, 'What is the difference between == and ===?', '== is faster', '=== checks type and value, == only checks value', '=== is deprecated', 'They are the same', 'B', 4),
+(1, 'Which ES6 feature is used to destructure objects?', 'Spread operator', 'Rest parameters', 'Destructuring assignment', 'Template literals', 'C', 5);
+
+-- Questions for React Development (test_id = 2)
+INSERT INTO skill_test_question (test_id, question_text, option_a, option_b, option_c, option_d, correct_answer, order_index) VALUES
+(2, 'What hook is used to manage state in functional components?', 'useEffect', 'useState', 'useContext', 'useReducer', 'B', 1),
+(2, 'When does useEffect run with an empty dependency array?', 'On every render', 'Only on mount', 'Only on unmount', 'Never', 'B', 2),
+(2, 'What is the virtual DOM?', 'A copy of the browser DOM', 'A lightweight JavaScript representation of the real DOM', 'A CSS framework', 'A testing utility', 'B', 3),
+(2, 'How do you pass data from parent to child component?', 'Using state', 'Using props', 'Using context', 'Using refs', 'B', 4),
+(2, 'What is the purpose of React.memo()?', 'To create memos in the app', 'To prevent unnecessary re-renders', 'To store data in memory', 'To create new components', 'B', 5);
+
+-- Questions for SEO Essentials (test_id = 3)
+INSERT INTO skill_test_question (test_id, question_text, option_a, option_b, option_c, option_d, correct_answer, order_index) VALUES
+(3, 'What does SEO stand for?', 'Social Engine Optimization', 'Search Engine Optimization', 'Site Enhancement Options', 'Standard Engine Operations', 'B', 1),
+(3, 'Which HTML tag is most important for SEO?', '<div>', '<span>', '<title>', '<p>', 'C', 2),
+(3, 'What is a backlink?', 'A link pointing to your website from another site', 'A broken link', 'An internal link', 'A navigation menu', 'A', 3),
+(3, 'What is the recommended length for a meta description?', '50-60 characters', '150-160 characters', '300-500 characters', '20-30 characters', 'B', 4),
+(3, 'Which tool is commonly used for keyword research?', 'Photoshop', 'Google Keyword Planner', 'Microsoft Word', 'Slack', 'B', 5);
+
+-- Certificates for passed tests
 INSERT INTO certificate (certificate_id, issued_at) VALUES
 (1, '2024-01-15'),
 (2, '2024-02-20'),
@@ -362,66 +370,39 @@ INSERT INTO certificate (certificate_id, issued_at) VALUES
 (4, '2023-12-05'),
 (5, '2024-01-25');
 
-INSERT INTO skill_certification (certificate_id, "userID", exam_id) VALUES
-(1, 7, 1),
-(2, 7, 2),
-(3, 18, 3),
-(4, 6, 4),
-(5, 8, 5);
+-- Skill Certifications (linking users to their certificates)
+INSERT INTO skill_certification (certificate_id, "userID", test_id) VALUES
+(1, 7, 1),   -- Jessica Taylor passed JavaScript
+(2, 7, 2),   -- Jessica Taylor passed React
+(3, 18, 3),  -- Lucas Walker passed SEO
+(4, 6, 1),   -- Alex Martinez passed JavaScript
+(5, 12, 2);  -- Ethan White passed React
 
-INSERT INTO test_attempt (attempt_id, freelancer_id, exam_id, started_at, submitted_at, score_percent, passed, answers_blob) VALUES
-(1, 7, 1, NOW() - INTERVAL '90 days', NOW() - INTERVAL '90 days', 92.50, true, '{"q1": "a", "q2": "c", "q3": "b"}'),
-(2, 7, 2, NOW() - INTERVAL '60 days', NOW() - INTERVAL '60 days', 88.00, true, '{"q1": "b", "q2": "a", "q3": "d"}'),
-(3, 18, 3, NOW() - INTERVAL '75 days', NOW() - INTERVAL '75 days', 95.00, true, '{"q1": "c", "q2": "b", "q3": "a"}'),
-(4, 6, 4, NOW() - INTERVAL '120 days', NOW() - INTERVAL '120 days', 91.00, true, '{"q1": "a", "q2": "d", "q3": "c"}'),
-(5, 8, 5, NOW() - INTERVAL '85 days', NOW() - INTERVAL '85 days', 89.50, true, '{"q1": "b", "q2": "c", "q3": "a"}');
+-- Test Attempts
+INSERT INTO test_attempt (attempt_id, freelancer_id, test_id, started_at, submitted_at, score_percent, passed, answers_blob, time_taken_seconds, attempt_number) VALUES
+(1, 7, 1, NOW() - INTERVAL '90 days', NOW() - INTERVAL '90 days', 80.00, true, '{"1": "C", "2": "B", "3": "B", "4": "B", "5": "C"}', 480, 1),
+(2, 7, 2, NOW() - INTERVAL '60 days', NOW() - INTERVAL '60 days', 100.00, true, '{"6": "B", "7": "B", "8": "B", "9": "B", "10": "B"}', 420, 1),
+(3, 18, 3, NOW() - INTERVAL '75 days', NOW() - INTERVAL '75 days', 80.00, true, '{"11": "B", "12": "C", "13": "A", "14": "B", "15": "B"}', 510, 1),
+(4, 6, 1, NOW() - INTERVAL '120 days', NOW() - INTERVAL '120 days', 100.00, true, '{"1": "C", "2": "B", "3": "B", "4": "B", "5": "C"}', 390, 1),
+(5, 12, 2, NOW() - INTERVAL '85 days', NOW() - INTERVAL '85 days', 80.00, true, '{"6": "B", "7": "B", "8": "B", "9": "B", "10": "B"}', 450, 1);
 
--- ============================================================================
--- Support Tickets
--- ============================================================================
-
-INSERT INTO support_ticket (ticket_id, "userID", admin_id, subject, opened_at, status) VALUES
-(1, 1, 21, 'Payment issue with order #1', NOW() - INTERVAL '15 days', 'closed'),
-(2, 3, 21, 'How to request a refund?', NOW() - INTERVAL '10 days', 'closed'),
-(3, 6, 22, 'Account verification needed', NOW() - INTERVAL '5 days', 'assigned'),
-(4, 10, NULL, 'Question about service fees', NOW() - INTERVAL '2 days', 'open');
-
-INSERT INTO ticket_message (ticket_id, message_no, sender_user_id, content, sent_at) VALUES
-(1, 1, 1, 'I made a payment but it''s not showing in my account.', NOW() - INTERVAL '15 days'),
-(1, 2, 21, 'Let me check that for you. Can you provide the transaction ID?', NOW() - INTERVAL '15 days'),
-(1, 3, 1, 'Sure, it''s TXN123456789', NOW() - INTERVAL '14 days'),
-(1, 4, 21, 'Found it! The payment was processed successfully. It should appear in your account within 24 hours.', NOW() - INTERVAL '14 days'),
-
-(2, 1, 3, 'What''s your refund policy?', NOW() - INTERVAL '10 days'),
-(2, 2, 21, 'You can request a refund within 14 days if the work doesn''t meet the agreed requirements.', NOW() - INTERVAL '10 days'),
-
-(3, 1, 6, 'I need to verify my account to withdraw earnings.', NOW() - INTERVAL '5 days'),
-(3, 2, 22, 'Please upload a government-issued ID and proof of address.', NOW() - INTERVAL '5 days');
 
 -- ============================================================================
 -- Revision Requests
 -- ============================================================================
 
-INSERT INTO revision_request (revision_id, order_id, requested_at, notes, request_status) VALUES
-(1, 1, NOW() - INTERVAL '25 days', 'Can you make the logo slightly bolder?', 'fulfilled'),
-(2, 2, NOW() - INTERVAL '20 days', 'Please adjust the header spacing on mobile view.', 'fulfilled'),
-(3, 4, NOW() - INTERVAL '1 day', 'Add a fade transition between clips.', 'accepted');
+INSERT INTO revision_request (revision_id, order_id, requested_at, reason, status) VALUES
+(1, 1, NOW() - INTERVAL '25 days', 'Can you make the logo slightly bolder?', 'completed'),
+(2, 2, NOW() - INTERVAL '20 days', 'Please adjust the header spacing on mobile view.', 'completed'),
+(3, 4, NOW() - INTERVAL '1 day', 'Add a fade transition between clips.', 'in_progress');
 
 -- ============================================================================
 -- Disputes
 -- ============================================================================
 
-INSERT INTO dispute_resolution (dispute_id, order_id, category_id, creation_time, description, status) VALUES
-(1, 6, 5, NOW() - INTERVAL '5 days', 'Code doesn''t work as described in the package.', 'under_review');
+INSERT INTO dispute_resolution (dispute_id, order_id, creation_time, description, status) VALUES
+(1, 6, NOW() - INTERVAL '5 days', 'Code doesn''t work as described in the package.', 'under_review');
 
--- ============================================================================
--- Admin Reports
--- ============================================================================
-
-INSERT INTO report (report_id, admin_id, generation_time, parameter, report_type) VALUES
-(1, 21, NOW() - INTERVAL '7 days', 'monthly_revenue', 'Financial Report'),
-(2, 22, NOW() - INTERVAL '14 days', 'user_growth', 'User Analytics'),
-(3, 21, NOW() - INTERVAL '3 days', 'top_services', 'Service Performance');
 
 -- ============================================================================
 -- Service Add-ons

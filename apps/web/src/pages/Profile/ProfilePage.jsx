@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { APICore } from "@/helpers/apiCore";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { User, Mail, Calendar, Shield, Edit2, Lock, Check, Eye, EyeOff, Star, DollarSign, Package } from "lucide-react";
+import { User, Mail, Calendar, Shield, Edit2, Lock, Check, Eye, EyeOff, Star, DollarSign, Package, Award } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ProfilePage() {
@@ -12,6 +12,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [certifications, setCertifications] = useState([]);
   
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -38,6 +39,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchProfile();
+    fetchCertifications();
   }, []);
 
   const fetchProfile = async () => {
@@ -55,6 +57,16 @@ export default function ProfilePage() {
       console.error("Error fetching profile:", error);
       toast.error("Failed to load profile");
       setLoading(false);
+    }
+  };
+
+  const fetchCertifications = async () => {
+    try {
+      const api = new APICore();
+      const response = await api.get("/api/skill-tests/my-certifications");
+      setCertifications(response.data.certifications || []);
+    } catch (error) {
+      console.error("Error fetching certifications:", error);
     }
   };
 
@@ -343,6 +355,40 @@ export default function ProfilePage() {
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Skill Certifications */}
+        {profile.roles.includes('freelancer') && certifications.length > 0 && (
+          <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">Skill Certifications</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {certifications.map((cert) => (
+                <div
+                  key={cert.certificateId}
+                  className="border-2 border-green-200 bg-green-50 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <Award className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-slate-900 mb-1">{cert.testTitle}</h3>
+                      {cert.categoryName && (
+                        <p className="text-xs text-slate-600 mb-2">{cert.categoryName}</p>
+                      )}
+                      <p className="text-xs text-slate-500">
+                        Earned: {new Date(cert.issuedAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

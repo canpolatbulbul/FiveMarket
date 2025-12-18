@@ -171,3 +171,48 @@ export const promoteToAdmin = async (req, res) => {
     });
   }
 };
+
+/**
+ * Get user's skill certifications (Public)
+ * @access Public
+ */
+export const getUserCertifications = async (req, res) => {
+  try {
+    const { id } = req.params;
+    // The ID is a raw numeric ID from the database (e.g., from service.freelancer_id)
+    const numericUserId = parseInt(id, 10);
+
+    if (isNaN(numericUserId)) {
+      return res.status(400).json({
+        error: "Invalid user ID",
+        message: "User ID must be a number",
+      });
+    }
+
+    const result = await query(
+      `SELECT 
+        c.certificate_id as "certificateId",
+        c.issued_at as "issuedAt",
+        st.title as "testTitle",
+        sc2.description as "categoryName"
+      FROM skill_certification sc
+      JOIN certificate c ON sc.certificate_id = c.certificate_id
+      JOIN skill_test st ON sc.test_id = st.test_id
+      LEFT JOIN service_category sc2 ON st.category_id = sc2.category_id
+      WHERE sc."userID" = $1
+      ORDER BY c.issued_at DESC`,
+      [numericUserId]
+    );
+
+    res.json({
+      success: true,
+      certifications: result.rows,
+    });
+  } catch (error) {
+    console.error("Error fetching user certifications:", error);
+    res.status(500).json({
+      error: "Failed to fetch certifications",
+      message: error.message,
+    });
+  }
+};

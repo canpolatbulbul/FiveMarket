@@ -104,6 +104,9 @@ export default function Navbar() {
                     <Link to="/admin/dashboard" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
                       Dashboard
                     </Link>
+                    <Link to="/admin/skill-tests" className="text-slate-700 hover:text-indigo-600 font-medium transition-colors">
+                      Skill Tests
+                    </Link>
                   </>
                 ) : (
                   <>
