@@ -2,6 +2,7 @@
 # Core Dependencies (Recursive)
 # ---------------------------------
 node_modules/
+.vite
 .pnp
 .pnp.js
 
