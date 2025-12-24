@@ -34,9 +34,9 @@ ALTER SEQUENCE package_package_id_seq RESTART WITH 49;
 ALTER SEQUENCE service_category_category_id_seq RESTART WITH 11;
 ALTER SEQUENCE order_order_id_seq RESTART WITH 11;
 ALTER SEQUENCE money_transaction_transaction_id_seq RESTART WITH 5;
-ALTER SEQUENCE conversation_conversation_id_seq RESTART WITH 1;
-ALTER SEQUENCE revision_request_revision_id_seq RESTART WITH 1;
-ALTER SEQUENCE review_review_id_seq RESTART WITH 1;
+ALTER SEQUENCE conversation_conversation_id_seq RESTART WITH 6;
+ALTER SEQUENCE revision_request_revision_id_seq RESTART WITH 4;
+ALTER SEQUENCE review_review_id_seq RESTART WITH 9;
 ALTER SEQUENCE dispute_resolution_dispute_id_seq RESTART WITH 2;
 ALTER SEQUENCE skill_test_test_id_seq RESTART WITH 4;
 ALTER SEQUENCE skill_test_question_question_id_seq RESTART WITH 16;
@@ -299,6 +299,23 @@ INSERT INTO money_transaction (transaction_id, amount, receiver_iban, sender_iba
 (3, 250.00, 'TR330006100519786457841328', 'TR330006100519786457841002', NOW() - INTERVAL '38 days'),
 (4, 120.00, 'TR330006100519786457841329', 'TR330006100519786457841003', NOW() - INTERVAL '15 days');
 
+-- ============================================================================
+-- Transactions (Payment records for orders)
+-- ============================================================================
+
+INSERT INTO transaction (transaction_id, order_id, amount, payment_method, card_last4, status, created_at) VALUES
+(1, 1, 150.00, 'card', '1234', 'completed', NOW() - INTERVAL '30 days'),
+(2, 2, 1200.00, 'card', '5678', 'completed', NOW() - INTERVAL '25 days'),
+(3, 3, 125.00, 'card', '9012', 'pending', NOW() - INTERVAL '5 days'),
+(4, 4, 200.00, 'card', '3456', 'pending', NOW() - INTERVAL '3 days'),
+(5, 5, 500.00, 'card', '7890', 'pending', NOW() - INTERVAL '1 day'),
+(6, 6, 300.00, 'card', '2345', 'pending', NOW() - INTERVAL '7 days'),
+(7, 7, 250.00, 'card', '6789', 'completed', NOW() - INTERVAL '45 days'),
+(8, 8, 120.00, 'card', '0123', 'completed', NOW() - INTERVAL '20 days'),
+(9, 9, 400.00, 'card', '4567', 'pending', NOW() - INTERVAL '10 days'),
+(10, 10, 800.00, 'card', '8901', 'pending', NOW() - INTERVAL '2 days');
+
+ALTER SEQUENCE transaction_transaction_id_seq RESTART WITH 11;
 
 -- ============================================================================
 -- Conversations & Messages

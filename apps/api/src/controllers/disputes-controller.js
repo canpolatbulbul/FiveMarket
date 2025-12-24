@@ -346,10 +346,10 @@ export const updateDisputeStatus = async (req, res) => {
         [order.total_price, order.freelancer_id]
       );
 
-      // Update order status to delivered (dispute resolved, work accepted)
+      // Update order status to completed (dispute resolved, payment released)
       await query(
         `UPDATE "order" 
-         SET status = 'delivered', updated_at = NOW() 
+         SET status = 'completed', updated_at = NOW() 
          WHERE order_id = $1`,
         [dispute.order_id]
       );

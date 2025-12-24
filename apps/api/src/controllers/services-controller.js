@@ -286,7 +286,7 @@ export const searchServices = async (req, res) => {
       paramCount++;
       conditions.push(`EXISTS (
         SELECT 1 FROM package p2 
-        JOIN services_in_category sic2 ON s2.service_id = sic2.service_id 
+        JOIN services_in_category sic2 ON s.service_id = sic2.service_id 
         WHERE p2.service_id = s.service_id AND sic2.category_id = $${paramCount}
       )`);
       params.push(parseInt(category));
