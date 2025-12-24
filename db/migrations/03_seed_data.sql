@@ -272,12 +272,12 @@ INSERT INTO "order" (order_id, client_id, package_id, status, placed_time, due_t
 (2, 2, 8, 'completed', NOW() - INTERVAL '25 days', NOW() - INTERVAL '18 days', 1200.00, 'completed'),
 (3, 3, 14, 'in_progress', NOW() - INTERVAL '5 days', NOW() + INTERVAL '10 days', 125.00, 'in_progress'),
 (4, 1, 20, 'in_progress', NOW() - INTERVAL '3 days', NOW() + INTERVAL '4 days', 200.00, 'in_progress'),
-(5, 4, 26, 'submitted', NOW() - INTERVAL '1 day', NOW() + INTERVAL '29 days', 500.00, 'submitted'),
+(5, 4, 26, 'pending', NOW() - INTERVAL '1 day', NOW() + INTERVAL '29 days', 500.00, 'pending'),
 (6, 5, 32, 'delivered', NOW() - INTERVAL '7 days', NOW() + INTERVAL '7 days', 300.00, 'delivered'),
 (7, 2, 38, 'completed', NOW() - INTERVAL '45 days', NOW() - INTERVAL '38 days', 250.00, 'completed'),
 (8, 3, 44, 'completed', NOW() - INTERVAL '20 days', NOW() - INTERVAL '15 days', 120.00, 'completed'),
 (9, 1, 47, 'in_progress', NOW() - INTERVAL '10 days', NOW() + INTERVAL '80 days', 400.00, 'in_progress'),
-(10, 4, 11, 'submitted', NOW() - INTERVAL '2 days', NOW() + INTERVAL '12 days', 800.00, 'submitted');
+(10, 4, 11, 'pending', NOW() - INTERVAL '2 days', NOW() + INTERVAL '12 days', 800.00, 'pending');
 
 -- ============================================================================
 -- Reviews

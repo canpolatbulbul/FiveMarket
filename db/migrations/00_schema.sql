@@ -65,6 +65,24 @@ CREATE TABLE IF NOT EXISTS administrator (
 CREATE INDEX IF NOT EXISTS idx_administrator_user_id ON administrator("userID");
 
 -- ============================================================================
+-- Service Categories (must be before skills which reference it)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS service_category (
+  category_id BIGSERIAL PRIMARY KEY,
+  total_customers INT NOT NULL DEFAULT 0,
+  description VARCHAR(255),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT total_customers_non_negative CHECK (total_customers >= 0)
+);
+
+DROP TRIGGER IF EXISTS trg_service_category_updated_at ON service_category;
+CREATE TRIGGER trg_service_category_updated_at
+  BEFORE UPDATE ON service_category
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ============================================================================
 -- Skills & Certification
 -- ============================================================================
 
@@ -189,20 +207,6 @@ CREATE INDEX IF NOT EXISTS idx_package_service ON package(service_id);
 DROP TRIGGER IF EXISTS trg_package_updated_at ON package;
 CREATE TRIGGER trg_package_updated_at
   BEFORE UPDATE ON package
-  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
-CREATE TABLE IF NOT EXISTS service_category (
-  category_id BIGSERIAL PRIMARY KEY,
-  total_customers INT NOT NULL DEFAULT 0,
-  description VARCHAR(255),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT total_customers_non_negative CHECK (total_customers >= 0)
-);
-
-DROP TRIGGER IF EXISTS trg_service_category_updated_at ON service_category;
-CREATE TRIGGER trg_service_category_updated_at
-  BEFORE UPDATE ON service_category
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TABLE IF NOT EXISTS services_in_category (
